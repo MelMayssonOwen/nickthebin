@@ -13,13 +13,25 @@ window.UKP = window.UKP || {};
       if (!AC) { enabled = false; return null; }
       ctx = new AC();
       master = ctx.createGain();
-      master.gain.value = 0.5;
+      master.gain.value = 0.8;
       master.connect(ctx.destination);
     }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
-  UKP.unlockAudio = function () { ac(); };
+  // Full unlock: create context + play a silent buffer + resume, all inside the gesture.
+  UKP.unlockAudio = function () {
+    const c = ac();
+    if (!c) return;
+    try {
+      const b = c.createBuffer(1, 1, 22050);
+      const s = c.createBufferSource(); s.buffer = b; s.connect(master); s.start(0);
+    } catch (e) { /* ignore */ }
+    if (c.state === 'suspended') c.resume();
+  };
+  // belt & braces: resume whenever the tab regains focus
+  window.addEventListener('focus', function () { if (ctx && ctx.state === 'suspended') ctx.resume(); });
+  document.addEventListener('visibilitychange', function () { if (ctx && ctx.state === 'suspended' && !document.hidden) ctx.resume(); });
 
   function tone(freq, dur, type, vol, when) {
     if (!enabled) return;
@@ -79,6 +91,8 @@ window.UKP = window.UKP || {};
     brick() { tone(180, 0.05, 'square', 0.14); tone(120, 0.05, 'square', 0.12, 0.03); },
     charge() { sweep(120, 360, 0.6, 'sawtooth', 0.16); noise(0.6, 0.1, 600); },
     smash() { noise(0.22, 0.26, 2600); sweep(180, 50, 0.2, 'square', 0.2); },
+    clang() { tone(1200, 0.05, 'square', 0.16); tone(900, 0.08, 'square', 0.12, 0.04); noise(0.06, 0.12, 4000); },
+    collect() { arp([784, 1047, 1319], 0.06, 0.12, 'square', 0.16); },
     clear() { arp([523, 659, 784, 1047], 0.1, 0.16, 'square', 0.16); },
     win() { arp([523, 659, 784, 1047, 880, 1047, 1319], 0.13, 0.2, 'square', 0.18); },
     over() { arp([392, 311, 247, 196], 0.16, 0.24, 'triangle', 0.16); },

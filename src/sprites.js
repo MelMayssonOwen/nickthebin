@@ -169,6 +169,22 @@ window.UKP = window.UKP || {};
     R(g, '#5a5a5a', 4, 18, 4, 4);
     R(g, '#0c0c0c', 5, 19, 2, 2);
   }
+
+  // uniform add-ons (drawn over the cop torso)
+  function vestHivis(g) {
+    R(g, '#e9e02a', 5, 18, 13, 13);
+    R(g, '#cfc722', 16, 18, 2, 13);
+    R(g, '#eef0f2', 5, 22, 13, 1); R(g, '#eef0f2', 5, 27, 13, 1);
+    R(g, '#9aa0a6', 8, 18, 1, 13); R(g, '#9aa0a6', 14, 18, 1, 13);
+  }
+  // a riot shield held up on the front side
+  function riotShield(g) {
+    R(g, '#16181d', 1, 14, 9, 24);
+    R(g, '#2c3038', 2, 15, 7, 22);
+    R(g, '#4a505a', 2, 15, 7, 2);
+    R(g, '#aeb6c0', 3, 19, 5, 9);
+    R(g, '#3a3f47', 3, 30, 5, 5);
+  }
   function heart(g, col) {
     R(g, col, 1, 1, 2, 2); R(g, col, 6, 1, 2, 2);
     R(g, col, 0, 2, 9, 2); R(g, col, 1, 4, 7, 1);
@@ -218,6 +234,18 @@ window.UKP = window.UKP || {};
     S.cop_walk2 = make(24, 44, g => { torsoCop(g); armsGuardU(g, U); legsU(g, 2, U, US); headCop(g); });
     S.cop_punch = make(24, 44, g => { torsoCop(g); armsPunchU(g, U); legsU(g, 0, U, US); headCop(g); });
     S.cop_kneel = make(24, 44, g => kneelU(g, headCop, U, US));
+
+    // hi-vis variant (yellow vest over the uniform)
+    S.cophivis_idle = make(24, 44, g => { torsoCop(g); vestHivis(g); armsGuardU(g, U); legsU(g, 0, U, US); headCop(g); });
+    S.cophivis_walk1 = make(24, 44, g => { torsoCop(g); vestHivis(g); armsGuardU(g, U); legsU(g, 1, U, US); headCop(g); });
+    S.cophivis_walk2 = make(24, 44, g => { torsoCop(g); vestHivis(g); armsGuardU(g, U); legsU(g, 2, U, US); headCop(g); });
+    S.cophivis_punch = make(24, 44, g => { torsoCop(g); vestHivis(g); armsPunchU(g, U); legsU(g, 0, U, US); headCop(g); });
+
+    // riot variant (anti-émeute shield)
+    S.copshield_idle = make(24, 44, g => { torsoCop(g); armsGuardU(g, U); legsU(g, 0, U, US); headCop(g); riotShield(g); });
+    S.copshield_walk1 = make(24, 44, g => { torsoCop(g); armsGuardU(g, U); legsU(g, 1, U, US); headCop(g); riotShield(g); });
+    S.copshield_walk2 = make(24, 44, g => { torsoCop(g); armsGuardU(g, U); legsU(g, 2, U, US); headCop(g); riotShield(g); });
+    S.copshield_punch = make(24, 44, g => { torsoCop(g); armsPunchU(g, U); legsU(g, 0, U, US); headCop(g); riotShield(g); });
 
     S.boss_idle = make(24, 44, g => { torsoBoss(g); armsGuardU(g, SU); legsU(g, 0, SU, SS); headBoss(g); });
     S.boss_walk1 = make(24, 44, g => { torsoBoss(g); armsGuardU(g, SU); legsU(g, 1, SU, SS); headBoss(g); });

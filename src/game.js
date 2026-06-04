@@ -36,7 +36,7 @@ window.UKP = window.UKP || {};
     scrollX: 0, worldW: 2200, cfg: STAGES[0],
     player: null, cops: [], bins: [], projectiles: [], bubbles: [], props: { back: [], front: [] },
     defeated: 0, bossActive: false, boss: null, spawnT: 0, lineT: 0,
-    bigBin: null, charging: false, chargeT: 0,
+    bigBin: null, charging: false, chargeT: 0, hearts: [],
     msg: null, msgSub: '', msgT: 0, msgPersist: false,
   };
   UKP.G = G;
@@ -84,6 +84,7 @@ window.UKP = window.UKP || {};
     for (let x = 220; x < cfg.worldW; x += 360) G.props.front.push({ img: 'lamp', x, y: GROUND_Y + 4 });
     G.defeated = 0; G.bossActive = false; G.boss = null; G.spawnT = 0; G.lineT = 0; G.scrollX = 0;
     G.bigBin = null; G.charging = false; G.chargeT = 0;
+    G.hearts = [{ x: Math.round(cfg.worldW * 0.45), y: GROUND_Y - 30 }]; // one pick-me-up heart per round
     G.state = 'play';
     setMessage('STAGE ' + (G.stageIndex + 1), cfg.name, 1.7);
   }
@@ -120,9 +121,10 @@ window.UKP = window.UKP || {};
       pc.tex = (Math.floor(G.t * 10) % 2) ? 'man_walk1' : 'man_walk2';
       G.scrollX = UKP.clamp(pc.x - 160, 0, Math.max(0, G.worldW - VW));
       for (const c of G.cops) {
-        if (!c.ko && c.x > pc.x - 30 && c.x < pc.x + 74) { // plough the line — they go flying
-          koCop(c);
-          c.vy = -320 - Math.random() * 140; c.vx = 130 + Math.random() * 130; c.koT = 1.4;
+        if (!c.ko && c.x > pc.x - 30 && c.x < pc.x + 74) { // plough the line — they scatter like bowling pins
+          c.hp = 1; koCop(c);
+          c.vy = -420 - Math.random() * 220; c.vx = 160 + Math.random() * 220;
+          c.spin = 16 + Math.random() * 18; c.koT = 1.9;
           sfx().smash && sfx().smash();
         }
       }
@@ -156,6 +158,17 @@ window.UKP = window.UKP || {};
 
     // camera
     G.scrollX = UKP.clamp(p.x - 160, 0, Math.max(0, G.worldW - VW));
+
+    // pick up a heart
+    for (let i = G.hearts.length - 1; i >= 0; i--) {
+      const h = G.hearts[i];
+      if (Math.abs(p.x - h.x) < 18 && Math.abs(p.y - h.y) < 40) {
+        if (p.hearts < 5) p.hearts++;
+        G.hearts.splice(i, 1);
+        sfx().collect && sfx().collect();
+        bubble(p.x, p.y - 50, '+1 HEART', '#e23b3b');
+      }
+    }
 
     updateProjectiles(dt);
     checkStomp();
@@ -200,8 +213,17 @@ window.UKP = window.UKP || {};
     // nearest bin
     let near = null, nd = 28;
     for (const b of G.bins) { const d = Math.abs(b.x - p.x); if (d < nd) { nd = d; near = b; } }
-    if (near) { p.carrying = near.key; G.bins = G.bins.filter(b => b !== near); p.action = 0.18; sfx().pickup && sfx().pickup(); return; }
+    if (near) {
+      p.carrying = near.key; G.bins = G.bins.filter(b => b !== near); p.action = 0.18; sfx().pickup && sfx().pickup();
+      if (near.key !== 'brick' && Math.random() < 0.22) permitShout(); // the one good gag
+      return;
+    }
     bash();
+  }
+  function permitShout() {
+    let near = null, nd = 240;
+    for (const c of G.cops) { if (c.ko) continue; const d = Math.abs(c.x - G.player.x); if (d < nd) { nd = d; near = c; } }
+    if (near) bubble(near.x, near.y - 50, "OY, GOT A PERMIT FOR THAT?", '#cfe3ff');
   }
   function throwBin() {
     const p = G.player;
@@ -216,7 +238,7 @@ window.UKP = window.UKP || {};
     for (const c of G.cops) {
       if (c.ko) continue;
       const dx = (c.x - p.x) * p.facing;
-      if (dx > -6 && dx < 30 && Math.abs(c.y - p.y) < 30) { c.isBoss ? hitBoss(1) : koCop(c); hit = true; }
+      if (dx > -6 && dx < 30 && Math.abs(c.y - p.y) < 30) { c.isBoss ? hitBoss(1) : hitCop(c); hit = true; }
     }
     sfx().punch && sfx().punch();
   }
@@ -228,7 +250,7 @@ window.UKP = window.UKP || {};
       for (const c of G.cops) {
         if (c.ko) continue;
         if (Math.abs(b.x - c.x) < 14 && Math.abs(b.y - (c.y - 22)) < 26) {
-          b.dead = true; c.isBoss ? hitBoss(1) : koCop(c); break;
+          b.dead = true; c.isBoss ? hitBoss(1) : hitCop(c); break;
         }
       }
       if (!b.dead && b.y >= GROUND_Y) { b.dead = true; G.bins.push({ x: UKP.clamp(b.x, 16, G.worldW - 16), y: GROUND_Y, key: b.key }); }
@@ -240,7 +262,7 @@ window.UKP = window.UKP || {};
   function updateSpawns(dt) {
     if (G.bossActive || G.charging) return;
     G.spawnT += dt; G.lineT += dt;
-    if (G.lineT >= 2.6) { G.lineT = 0; copChatter(); }
+    if (G.lineT >= 6) { G.lineT = 0; if (Math.random() < 0.6) copChatter(); } // keep it occasional
     if (G.spawnT >= G.cfg.spawn) {
       G.spawnT = 0;
       const alive = G.cops.filter(c => !c.ko && !c.isBoss).length;
@@ -259,12 +281,19 @@ window.UKP = window.UKP || {};
 
   function spawnCop(boss) {
     const starmer = boss && G.cfg.bossKind === 'starmer';
-    const kind = starmer ? 'boss' : 'cop'; // chief bosses are just big bobbies
+    let kind = starmer ? 'boss' : 'cop'; // chief bosses are just big bobbies
+    let hp = boss ? G.cfg.bossHp : 1;
+    let speed = boss ? G.cfg.copSpeed * 0.7 : G.cfg.copSpeed + UKP.randInt(-6, 10);
+    if (!boss) { // some bobbies wear hi-vis, some carry an anti-émeute shield
+      const r = Math.random();
+      if (r < 0.22) { kind = 'copshield'; hp = 2; speed *= 0.9; }
+      else if (r < 0.5) { kind = 'cophivis'; speed += 6; }
+    }
     const c = {
       x: UKP.clamp(G.scrollX + VW + 30, 20, G.worldW - 20), y: GROUND_Y,
       vx: 0, vy: 0, facing: -1, ko: false, isBoss: !!boss, scale: boss ? (starmer ? 1.4 : 1.5) : 1,
-      hp: boss ? G.cfg.bossHp : 1, speed: boss ? G.cfg.copSpeed * 0.7 : G.cfg.copSpeed + UKP.randInt(-6, 10),
-      nextPunch: 0, nextLine: G.t + UKP.rand(1.5, 4), flash: 0, walkT: 0, walkF: 0, punch: 0,
+      hp: hp, speed: speed,
+      nextPunch: 0, nextLine: G.t + UKP.rand(3, 7), flash: 0, walkT: 0, walkF: 0, punch: 0,
       kind: kind, tex: kind + '_idle', koT: 0, rot: 0,
       kneel: 0, knees: 0,
     };
@@ -278,7 +307,8 @@ window.UKP = window.UKP || {};
     for (let i = 0; i < n; i++) {
       const c = spawnCop(false);
       c.x = G.worldW - 280 + i * 26;
-      c.barrage = true; c.speed = 0; c.nextPunch = 1e30; c.nextLine = 1e30; c.tex = 'cop_idle';
+      c.barrage = true; c.speed = 0; c.nextPunch = 1e30; c.nextLine = 1e30;
+      c.kind = 'copshield'; c.hp = 1; c.tex = 'copshield_idle'; // a riot wall
     }
   }
 
@@ -295,16 +325,16 @@ window.UKP = window.UKP || {};
     for (const c of G.cops) {
       if (c.flash > 0) c.flash -= dt;
       if (c.ko) {
-        c.vy += GRAV * dt; c.x += c.vx * dt; c.y += c.vy * dt; c.rot += dt * 8 * (c.vx < 0 ? -1 : 1);
+        c.vy += GRAV * dt; c.x += c.vx * dt; c.y += c.vy * dt; c.rot += dt * (c.spin || 8) * (c.vx < 0 ? -1 : 1);
         c.koT -= dt;
         continue;
       }
       if (c.kneel > 0) { // stunned on one knee — can't chase or punch
-        c.kneel -= dt; c.vx = 0; c.tex = c.kind + '_kneel';
+        c.kneel -= dt; c.vx = 0; c.tex = (c.kind === 'boss' ? 'boss' : 'cop') + '_kneel';
         c.facing = (p.x < c.x) ? -1 : 1;
         continue;
       }
-      if (c.barrage) { c.vx = 0; c.facing = -1; c.tex = 'cop_idle'; continue; } // holds the line
+      if (c.barrage) { c.vx = 0; c.facing = -1; c.tex = c.kind + '_idle'; continue; } // holds the line
       const dx = p.x - c.x;
       const dir = dx < 0 ? -1 : 1;
       c.facing = dir;
@@ -320,7 +350,7 @@ window.UKP = window.UKP || {};
         }
         if (c.punch > 0) { c.punch -= dt; c.tex = c.kind + '_punch'; } else c.tex = c.kind + '_idle';
       }
-      if (!c.isBoss && G.t > c.nextLine) { c.nextLine = G.t + UKP.rand(4, 8); if (Math.random() < 0.5) bubble(c.x, c.y - 50, UKP.choice(COP_LINES), '#cfe3ff'); }
+      if (!c.isBoss && G.t > c.nextLine) { c.nextLine = G.t + UKP.rand(9, 16); if (Math.random() < 0.3) bubble(c.x, c.y - 50, UKP.choice(COP_LINES), '#cfe3ff'); }
     }
     G.cops = G.cops.filter(c => !(c.ko && c.koT <= 0));
   }
@@ -333,9 +363,14 @@ window.UKP = window.UKP || {};
   }
 
   // a hit reaction: the victim complains, the hero often replies with a catchphrase
-  function heroReply() { if (Math.random() < 0.6) bubble(G.player.x, G.player.y - 52, UKP.choice(HERO_LINES), '#bfe3ff'); }
-  function react(c, lines, col) { if (Math.random() < 0.6) bubble(c.x, c.y - 50, UKP.choice(lines), col || '#ffd23a'); heroReply(); }
+  function heroReply() { if (Math.random() < 0.3) bubble(G.player.x, G.player.y - 52, UKP.choice(HERO_LINES), '#bfe3ff'); }
+  function react(c, lines, col) { if (Math.random() < 0.4) bubble(c.x, c.y - 50, UKP.choice(lines), col || '#ffd23a'); heroReply(); }
 
+  // a throw/bash hit: the shield absorbs the first one (clang), otherwise they go down
+  function hitCop(c) {
+    if (c.hp > 1) { c.hp -= 1; c.flash = 0.14; c.x += G.player.facing * 4; sfx().clang && sfx().clang(); return; }
+    koCop(c);
+  }
   function koCop(c) { koSprite(c); G.defeated++; G.score += 150; sfx().hit && sfx().hit(); react(c, hitLines()); }
   function koSprite(c) { c.ko = true; c.vy = -200; c.vx = G.player.facing * 60; c.koT = 1.0; }
 
@@ -382,6 +417,7 @@ window.UKP = window.UKP || {};
   function render(ctx) {
     const SP = UKP.SP;
     if (G.state === 'title') { renderTitle(ctx); return; }
+    if (G.state === 'win') { renderWin(ctx); return; }
 
     ctx.drawImage(SP.sky, 0, 0);
     // landmark skyline for this stage (rises above the rooftops)
@@ -413,6 +449,12 @@ window.UKP = window.UKP || {};
     }
     // bins
     for (const b of G.bins) spr(ctx, SP[b.key], b.x, b.y, 1, 1);
+    // pick-up hearts (bobbing)
+    for (const h of G.hearts) {
+      const bob = Math.round(Math.sin(G.t * 4) * 3);
+      const sx = Math.round(h.x - G.scrollX - 11), sy = h.y - 19 + bob;
+      ctx.drawImage(SP.heart, sx, sy, 22, 20);
+    }
     // cops
     for (const c of G.cops) {
       const a = c.ko ? Math.max(0, c.koT) : 1;
@@ -509,6 +551,22 @@ window.UKP = window.UKP || {};
     UKP.drawTextCentered(ctx, 'NO NONSENSE', VW / 2, 92, 2, '#ffd23a');
     if (Math.floor(G.t * 2) % 2 === 0) UKP.drawTextCentered(ctx, 'PRESS ENTER OR CLICK', VW / 2, 150, 1, '#ffffff');
     UKP.drawTextCentered(ctx, 'MOVE  ARROWS    JUMP  UP    BIN/BASH  SPACE', VW / 2, 175, 1, '#dfe6ee');
+  }
+  function renderWin(ctx) {
+    const SP = UKP.SP;
+    ctx.drawImage(SP.sky, 0, 0);
+    for (let x = 0; x < VW; x += 200) ctx.drawImage(SP.sky_bigben, x, 48);
+    ctx.drawImage(SP.cloud, 70, 40); ctx.drawImage(SP.cloud, 320, 64);
+    ctx.drawImage(SP.bigben_tower, 232, 50, 56, 196);
+    for (let x = 0; x < VW; x += 40) ctx.drawImage(SP.pave_stone, x, 246);
+    const bob = Math.sin(G.t * 4) * 3;
+    spr2(ctx, SP.man_idle, 150, 248 + bob, 1, 1.8);
+    spr2(ctx, SP.bigbin, 330, 248, 1, 1.2);
+    spr2(ctx, SP.mate, 300, 248 - bob, 1, 1.4);
+    UKP.drawTextCentered(ctx, 'YOU WIN!', VW / 2, 60, 4, '#ffd23a');
+    UKP.drawTextCentered(ctx, "BRITAIN'S BINS ARE FREE", VW / 2, 100, 1, '#ffffff');
+    UKP.drawTextCentered(ctx, 'SCORE ' + String(G.score).padStart(6, '0'), VW / 2, 118, 1, '#ffffff');
+    if (Math.floor(G.t * 2) % 2 === 0) UKP.drawTextCentered(ctx, 'PRESS ENTER TO PLAY AGAIN', VW / 2, 150, 1, '#dfe6ee');
   }
   // simple non-camera sprite blit for the title screen
   function spr2(ctx, img, x, feetY, facing, scale) {
