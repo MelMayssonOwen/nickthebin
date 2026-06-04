@@ -28,7 +28,7 @@ window.UKP = window.UKP || {};
     { name: 'BIN THERE, NICKED THAT', worldW: 2500, target: 7, copSpeed: 42, copMax: 4, spawn: 1.45, bossHp: 8, bossName: 'SGT. SKIP', bossKind: 'chief', weapon: 'bin', binScene: true, sky: 'sky_generic', sign: ['BIN', 'AMNESTY'], theme: { building: 'houses', wall: 'rail_iron', ground: 'pave' } },
     { name: 'LONDON EYE', worldW: 2600, target: 8, copSpeed: 46, copMax: 4, spawn: 1.3, bossHp: 10, bossName: 'INSP. TRUNCHEON', bossKind: 'chief', weapon: 'brick', sky: 'sky_eye', sign: ['MIND', 'THE GAP'], theme: { building: 'bld_river', wall: 'rail_stone', ground: 'pave_stone' } },
     { name: 'TOWER BRIDGE', worldW: 2800, target: 9, copSpeed: 50, copMax: 5, spawn: 1.2, bossHp: 11, bossName: 'SUPT. KIPPER', bossKind: 'chief', weapon: 'brick', chargeEnd: true, sky: 'sky_bridge', sign: ['KEEP', 'LEFT'], theme: { building: 'bld_bridge', wall: 'rail_blue', ground: 'road_deck' } },
-    { name: 'BIG BIN', worldW: 3200, target: 11, copSpeed: 56, copMax: 5, spawn: 1.05, bossHp: 14, bossName: 'CHIEF PLOD', bossKind: 'chief', weapon: 'brick', sky: 'sky_bigben', sign: ['BIG', 'BIN'], theme: { building: 'bld_parl', wall: 'rail_stone', ground: 'pave_stone' } },
+    { name: 'BIG BIN', worldW: 3200, target: 11, copSpeed: 56, copMax: 5, spawn: 1.05, bossHp: 14, bossName: 'CHIEF PLOD', bossKind: 'chief', weapon: 'brick', sky: 'sky_bigben', sign: ['BIG', 'BIN'], foreLandmark: 'bigben_tower', theme: { building: 'bld_parl', wall: 'rail_stone', ground: 'pave_stone' } },
   ];
 
   const G = {
@@ -73,9 +73,13 @@ window.UKP = window.UKP || {};
     G.props = { back: [], front: [] };
     G.props.back.push({ img: 'car', x: cfg.worldW - 120, y: GROUND_Y + 4 });
     G.props.back.push({ img: 'sign', x: 150, y: GROUND_Y + 4 });
-    if (cfg.binScene) { // officers loading bins into a riot van
-      G.props.back.push({ img: 'binvan', x: Math.round(cfg.worldW * 0.42), y: GROUND_Y + 4 });
-      G.props.back.push({ img: 'binvan', x: Math.round(cfg.worldW * 0.72), y: GROUND_Y + 4 });
+    if (cfg.binScene) { // officers loading bins into a riot van — placed where you'll walk right past them
+      G.props.back.push({ img: 'binvan', x: 540, y: GROUND_Y + 4 });
+      G.props.back.push({ img: 'binvan', x: Math.round(cfg.worldW * 0.6), y: GROUND_Y + 4 });
+    }
+    if (cfg.foreLandmark) { // a big foreground landmark (e.g. Big Ben) rising from the street
+      G.props.back.push({ img: cfg.foreLandmark, x: Math.round(cfg.worldW * 0.5), y: GROUND_Y + 2 });
+      G.props.back.push({ img: cfg.foreLandmark, x: cfg.worldW - 180, y: GROUND_Y + 2 });
     }
     for (let x = 220; x < cfg.worldW; x += 360) G.props.front.push({ img: 'lamp', x, y: GROUND_Y + 4 });
     G.defeated = 0; G.bossActive = false; G.boss = null; G.spawnT = 0; G.lineT = 0; G.scrollX = 0;
@@ -92,7 +96,7 @@ window.UKP = window.UKP || {};
     G.bubbles = G.bubbles.filter(b => b.life > 0);
 
     if (G.state === 'title') {
-      if (I().anyPressed(['Enter', 'Space'])) { sfx().pickup && sfx().pickup(); startGame(); }
+      if (I().anyPressed(['Enter', 'Space'])) { sfx().title && sfx().title(); startGame(); }
       return;
     }
     if (G.state === 'clear') {
@@ -115,7 +119,13 @@ window.UKP = window.UKP || {};
       pc.x = Math.min(pc.x + 230 * dt, G.worldW - 20);
       pc.tex = (Math.floor(G.t * 10) % 2) ? 'man_walk1' : 'man_walk2';
       G.scrollX = UKP.clamp(pc.x - 160, 0, Math.max(0, G.worldW - VW));
-      for (const c of G.cops) { if (!c.ko && c.x > pc.x - 30 && c.x < pc.x + 60) koCop(c); }
+      for (const c of G.cops) {
+        if (!c.ko && c.x > pc.x - 30 && c.x < pc.x + 74) { // plough the line — they go flying
+          koCop(c);
+          c.vy = -320 - Math.random() * 140; c.vx = 130 + Math.random() * 130; c.koT = 1.4;
+          sfx().smash && sfx().smash();
+        }
+      }
       if (pc.x >= G.worldW - 22) { G.stageIndex++; startStage(); }
       return;
     }
@@ -182,7 +192,7 @@ window.UKP = window.UKP || {};
     // by the BIG BIN: the throw button charges instead of throwing
     if (G.bigBin && !G.charging && Math.abs(p.x - G.bigBin.x) < 70) {
       G.charging = true; G.chargeT = 0; p.carrying = null;
-      sfx().clear && sfx().clear();
+      sfx().charge && sfx().charge();
       setMessage('BIG BIN!', 'CHAAARGE!!!', 2);
       return;
     }
@@ -197,7 +207,7 @@ window.UKP = window.UKP || {};
     const p = G.player;
     const key = p.carrying; p.carrying = null; p.action = 0.26; p.tex = 'man_throw';
     G.projectiles.push({ x: p.x + p.facing * 10, y: p.y - 36, vx: p.facing * 250, vy: -210, key, rot: 0 });
-    sfx().throw && sfx().throw();
+    if (G.cfg.weapon === 'brick') { sfx().brick && sfx().brick(); } else { sfx().throw && sfx().throw(); }
     if (Math.random() < 0.4) bubble(p.x, p.y - 50, 'HAVE IT!', '#ffffff');
   }
   function bash() {
@@ -208,7 +218,7 @@ window.UKP = window.UKP || {};
       const dx = (c.x - p.x) * p.facing;
       if (dx > -6 && dx < 30 && Math.abs(c.y - p.y) < 30) { c.isBoss ? hitBoss(1) : koCop(c); hit = true; }
     }
-    if (!hit) sfx().throw && sfx().throw();
+    sfx().punch && sfx().punch();
   }
 
   function updateProjectiles(dt) {
@@ -236,7 +246,12 @@ window.UKP = window.UKP || {};
       const alive = G.cops.filter(c => !c.ko && !c.isBoss).length;
       if (G.defeated >= G.cfg.target) {
         if (G.cfg.chargeEnd) {
-          if (!G.bigBin) { G.bigBin = { x: G.worldW - 110 }; setMessage('TO THE BIG BIN!', 'GET TO IT AND PRESS SPACE', 2.2); }
+          if (!G.bigBin) {
+            // the big bin appears just ahead of you, with a long runway into a wall of riot police
+            G.bigBin = { x: Math.max(G.player.x + 90, Math.min(G.player.x + 200, G.worldW - 620)) };
+            spawnBarrage();
+            setMessage('GRAB THE BIG BIN!', 'SHOVE THE LINE — PRESS SPACE', 2.4);
+          }
         } else startBoss();
       } else if (alive < G.cfg.copMax) spawnCop(false);
     }
@@ -255,6 +270,16 @@ window.UKP = window.UKP || {};
     };
     G.cops.push(c);
     return c;
+  }
+
+  // a wall of riot police across the end of the road for the big-bin charge to smash
+  function spawnBarrage() {
+    const n = 9;
+    for (let i = 0; i < n; i++) {
+      const c = spawnCop(false);
+      c.x = G.worldW - 280 + i * 26;
+      c.barrage = true; c.speed = 0; c.nextPunch = 1e30; c.nextLine = 1e30; c.tex = 'cop_idle';
+    }
   }
 
   function startBoss() {
@@ -279,6 +304,7 @@ window.UKP = window.UKP || {};
         c.facing = (p.x < c.x) ? -1 : 1;
         continue;
       }
+      if (c.barrage) { c.vx = 0; c.facing = -1; c.tex = 'cop_idle'; continue; } // holds the line
       const dx = p.x - c.x;
       const dir = dx < 0 ? -1 : 1;
       c.facing = dir;
@@ -321,9 +347,8 @@ window.UKP = window.UKP || {};
   }
   function defeatBoss() {
     koSprite(G.boss); G.boss = null; G.bossActive = false; G.score += 1000;
-    sfx().clear && sfx().clear();
-    if (G.stageIndex + 1 < STAGES.length) { G.state = 'clear'; setMessage('STAGE CLEAR!', 'PRESS ENTER'); }
-    else { G.state = 'win'; setMessage('NO NONSENSE!', 'YOU WIN - PRESS ENTER'); }
+    if (G.stageIndex + 1 < STAGES.length) { sfx().clear && sfx().clear(); G.state = 'clear'; setMessage('STAGE CLEAR!', 'PRESS ENTER'); }
+    else { sfx().win && sfx().win(); G.state = 'win'; setMessage('NO NONSENSE!', 'YOU WIN - PRESS ENTER'); }
   }
 
   function hurtPlayer() {

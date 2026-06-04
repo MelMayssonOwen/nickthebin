@@ -431,20 +431,31 @@ window.UKP = window.UKP || {};
       R(g, '#6e2418', 5, 0, 1, 10); R(g, '#6e2418', 10, 0, 1, 10);
     });
 
-    // "Bin There, Nicked That" — two coppers loading a wheelie bin into a riot van
-    S.binvan = make(112, 54, g => {
-      R(g, C.TIRE, 54, 46, 12, 6); R(g, C.TIRE, 94, 46, 12, 6);
-      R(g, '#eef1f4', 42, 14, 70, 34);
-      R(g, '#cdd2d6', 46, 18, 16, 12); R(g, '#2b3a52', 48, 20, 12, 8);
-      for (let i = 0; i < 8; i++) { const x = 44 + i * 8; R(g, (i % 2 ? C.CARB : C.CARY), x, 30, 8, 6); R(g, (i % 2 ? C.CARY : C.CARB), x, 36, 8, 5); }
-      R(g, '#1a1a1a', 62, 8, 22, 6); R(g, C.LIGHTB, 64, 9, 8, 3); R(g, C.LIGHTR, 76, 9, 8, 3);
-      R(g, '#20242a', 100, 16, 12, 30);
-      UKP.drawTextCentered(g, 'POLICE', 74, 20, 1, '#163e9e');
-      // the nicked bin, carried, slightly tilted
-      R(g, '#222428', 22, 24, 14, 20); R(g, '#34373c', 22, 22, 14, 3); R(g, '#0c0c0c', 24, 44, 3, 2); R(g, '#0c0c0c', 31, 44, 3, 2);
-      // copper on each end
-      R(g, C.UNIF, 4, 28, 8, 18); R(g, C.HELM, 5, 20, 6, 7); R(g, C.SILVER, 7, 22, 2, 2); R(g, C.SKIN, 6, 27, 4, 2);
-      R(g, C.UNIF, 36, 28, 8, 18); R(g, C.HELM, 37, 20, 6, 7); R(g, C.SILVER, 39, 22, 2, 2); R(g, C.SKIN, 36, 27, 4, 2);
+    // "Bin There, Nicked That" — three coppers loading a wheelie bin into a riot van
+    S.binvan = make(154, 68, g => {
+      // riot van (right)
+      R(g, C.TIRE, 98, 60, 16, 7); R(g, C.TIRE, 132, 60, 16, 7);
+      R(g, '#55585c', 102, 62, 8, 3); R(g, '#55585c', 136, 62, 8, 3);
+      R(g, '#eef1f4', 76, 16, 78, 46); R(g, '#d6dbe0', 76, 16, 78, 3);
+      R(g, '#cdd2d6', 80, 22, 20, 14); R(g, '#2b3a52', 82, 24, 16, 10);
+      for (let i = 0; i < 9; i++) { const x = 78 + i * 8; R(g, (i % 2 ? C.CARB : C.CARY), x, 40, 8, 8); R(g, (i % 2 ? C.CARY : C.CARB), x, 48, 8, 6); }
+      R(g, '#1a1a1a', 102, 8, 30, 8); R(g, C.LIGHTB, 105, 9, 11, 5); R(g, C.LIGHTR, 119, 9, 11, 5);
+      R(g, '#20242a', 142, 22, 12, 40); R(g, '#3a4250', 144, 26, 8, 10);
+      UKP.drawTextCentered(g, 'POLICE', 114, 28, 1, '#163e9e');
+      // the nicked wheelie bin (centre), tilted toward the van
+      R(g, '#34373c', 46, 24, 20, 4); R(g, '#1a1c20', 46, 28, 20, 30); R(g, '#26282c', 46, 28, 3, 30);
+      R(g, '#0c0c0c', 49, 58, 5, 4); R(g, '#0c0c0c', 58, 58, 5, 4);
+      // three bobbies
+      const bobby = (x) => {
+        R(g, C.UNIF, x, 36, 10, 24); R(g, C.UNIFSH, x + 8, 36, 2, 24);
+        R(g, C.HELM, x + 1, 25, 8, 10); R(g, C.BLACK, x + 1, 25, 1, 10); R(g, C.BLACK, x + 8, 25, 1, 10);
+        R(g, C.SILVER, x + 4, 28, 2, 3); R(g, C.BLACK, x, 34, 10, 1); R(g, C.SKIN, x + 3, 34, 4, 2);
+        R(g, C.BLACK, x + 1, 60, 4, 4); R(g, C.BLACK, x + 6, 60, 4, 4);
+      };
+      bobby(20); bobby(66); bobby(90);
+      // blue-gloved arms reaching for the bin
+      R(g, C.UNIF, 30, 40, 10, 3); R(g, '#2f6fd0', 38, 40, 4, 3);
+      R(g, C.UNIF, 60, 40, 8, 3); R(g, '#2f6fd0', 60, 40, 4, 3);
     });
 
     // the BIG BIN — a big green commercial bin to charge the line with
@@ -469,6 +480,31 @@ window.UKP = window.UKP || {};
       R(g, '#3a3f45', 2, 16, 4, 7); R(g, C.SKIN, 2, 22, 3, 2);
       R(g, '#2a2d31', 7, 29, 4, 10); R(g, '#2a2d31', 12, 29, 4, 10);
       R(g, '#141414', 6, 39, 5, 3); R(g, '#141414', 12, 39, 5, 3);
+    });
+
+    // foreground Big Ben clock tower (Elizabeth Tower) for the Westminster finale
+    S.bigben_tower = make(56, 196, g => {
+      const STn = '#c7bd9c', SDn = '#a89c78', GO = '#b89a3a', WHc = '#eef0f2';
+      R(g, STn, 8, 22, 40, 174);            // shaft
+      R(g, SDn, 8, 22, 40, 2);
+      R(g, STn, 4, 184, 48, 12); R(g, SDn, 4, 184, 48, 2);   // base
+      // shaft windows (pointed gothic)
+      for (let y = 78; y < 182; y += 24) {
+        R(g, SDn, 16, y, 7, 14); R(g, SDn, 33, y, 7, 14);
+        R(g, STn, 18, y - 3, 3, 4); R(g, STn, 35, y - 3, 3, 4);
+      }
+      // belfry louvres
+      R(g, SDn, 12, 56, 32, 18); for (let x = 14; x < 44; x += 5) R(g, STn, x, 58, 2, 14);
+      // clock stage
+      R(g, STn, 10, 30, 36, 26); R(g, SDn, 10, 30, 36, 2);
+      R(g, GO, 17, 34, 22, 20); R(g, WHc, 19, 36, 18, 16);   // gold-framed clock face
+      R(g, '#26282c', 27, 38, 2, 8); R(g, '#26282c', 28, 43, 7, 2);  // hands
+      // spire / pinnacle
+      R(g, STn, 14, 12, 28, 10); R(g, SDn, 14, 12, 28, 2);
+      R(g, STn, 20, 4, 16, 9); R(g, STn, 25, -2, 6, 7);
+      R(g, GO, 27, 0, 2, 5);
+      // corner pinnacles
+      R(g, STn, 6, 14, 4, 10); R(g, STn, 46, 14, 4, 10);
     });
   };
 })(window.UKP);
