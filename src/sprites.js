@@ -31,6 +31,14 @@ window.UKP = window.UKP || {};
     return cv;
   }
   function R(cx, c, x, y, w, h) { cx.fillStyle = c; cx.fillRect(x, y, w, h); }
+  // paint a baked pixel grid (rows of hex strings / null) one fillRect per cell
+  function drawPixels(cx, grid, ox, oy) {
+    if (!grid) return;
+    for (let y = 0; y < grid.length; y++) {
+      const row = grid[y];
+      for (let x = 0; x < row.length; x++) { const c = row[x]; if (c) { cx.fillStyle = c; cx.fillRect(ox + x, oy + y, 1, 1); } }
+    }
+  }
 
   // ---- British Man parts (24x42, feet at bottom) ----
   function manHead(g) {
@@ -89,21 +97,12 @@ window.UKP = window.UKP || {};
     R(g, C.BLACK, 10, 13, 1, 2); R(g, C.BLACK, 13, 13, 1, 2);
     R(g, C.MUST, 9, 16, 6, 1);
   }
-  // Boss: silver swept hair, dark rectangular glasses, clean-shaven (Starmer-ish)
+  // Boss head: a pixelated photo of the real Keir Starmer (20x24, oval-masked)
   function headBoss(g) {
-    R(g, C.GREY, 6, 1, 12, 4);
-    R(g, C.GREYD, 6, 1, 12, 1);
-    R(g, C.GREY, 6, 5, 2, 5); R(g, C.GREY, 16, 5, 2, 5);
-    R(g, C.GREYD, 6, 4, 4, 1);
-    R(g, C.SKIN, 8, 5, 8, 10);
-    R(g, C.GREY, 8, 5, 8, 1);
-    R(g, C.BROW, 9, 7, 6, 1);
-    R(g, C.GLASS, 8, 8, 8, 3);
-    R(g, C.LENS, 9, 9, 2, 1); R(g, C.LENS, 13, 9, 2, 1);
-    R(g, C.BLACK, 9, 9, 1, 1); R(g, C.BLACK, 14, 9, 1, 1);
-    R(g, C.SKIN, 12, 9, 1, 1);
-    R(g, C.GLASS, 7, 9, 1, 1); R(g, C.GLASS, 16, 9, 1, 1);
-    R(g, C.SKINSH, 11, 13, 2, 1);
+    if (UKP.STARMER_HEAD) { drawPixels(g, UKP.STARMER_HEAD, 2, -1); return; }
+    // fallback: drawn likeness (silver hair, glasses, clean-shaven)
+    R(g, C.GREY, 6, 1, 12, 4); R(g, C.SKIN, 8, 5, 8, 10);
+    R(g, C.GLASS, 8, 8, 8, 3); R(g, C.LENS, 9, 9, 2, 1); R(g, C.LENS, 13, 9, 2, 1);
   }
   function torsoCop(g) {
     R(g, C.UNIF, 5, 18, 14, 14);
@@ -202,23 +201,7 @@ window.UKP = window.UKP || {};
     R(g, C.MUST, 9, 21, 10, 2);
     R(g, C.UNIF, 4, 24, 20, 4);
   }
-  function portraitBoss(g) {
-    R(g, C.GREY, 5, 2, 18, 5);
-    R(g, C.GREYD, 5, 2, 18, 1);
-    R(g, C.GREY, 5, 7, 3, 9); R(g, C.GREY, 20, 7, 3, 9);
-    R(g, C.SKIN, 8, 6, 12, 14);
-    R(g, C.GREY, 8, 6, 12, 1);
-    R(g, C.BROW, 9, 10, 4, 1); R(g, C.BROW, 15, 10, 4, 1);
-    R(g, C.GLASS, 8, 11, 12, 4);
-    R(g, C.LENS, 9, 12, 4, 2); R(g, C.LENS, 15, 12, 4, 2);
-    R(g, C.BLACK, 10, 12, 2, 2); R(g, C.BLACK, 16, 12, 2, 2);
-    R(g, C.SKIN, 13, 12, 2, 2);
-    R(g, C.SKINSH, 12, 17, 4, 1);
-    R(g, C.SUIT, 4, 21, 20, 7);
-    R(g, C.WHITE, 11, 21, 6, 7);
-    R(g, C.TIE, 13, 21, 2, 7);
-    R(g, C.SUIT, 9, 21, 2, 5); R(g, C.SUIT, 17, 21, 2, 5);
-  }
+  function portraitBoss(g) { drawPixels(g, UKP.STARMER_PORTRAIT, 0, 0); } // pixelated real photo
 
   UKP.SP = {};
 
@@ -251,7 +234,7 @@ window.UKP = window.UKP || {};
     S.flag = make(18, 12, flagUK);
     S.portrait_man = make(28, 28, portraitMan);
     S.portrait_cop = make(28, 28, portraitCop);
-    S.portrait_boss = make(28, 28, portraitBoss);
+    S.portrait_boss = make(34, 34, portraitBoss);
 
     // ---------- scenery ----------
     S.sky = make(VW, VH, g => {
@@ -358,6 +341,134 @@ window.UKP = window.UKP || {};
       R(g, '#1a1a1a', 26, 6, 24, 5); R(g, C.LIGHTB, 28, 7, 8, 3); R(g, C.LIGHTR, 40, 7, 8, 3);
       R(g, '#111111', 2, 22, 2, 12); R(g, '#111111', 72, 22, 2, 12);
       UKP.drawTextCentered(g, 'POLICE', 38, 26, 1, '#163e9e');
+    });
+
+    // ====== per-level environment tiles ======
+    // 10 Downing Street: dark Georgian brick + the famous black No.10 door
+    S.bld_downing = make(120, 120, g => {
+      R(g, '#37302c', 0, 0, 120, 120);
+      for (let y = 0; y < 120; y += 6) R(g, '#241d19', 0, y, 120, 1);
+      for (let y = 0; y < 120; y += 12) for (let x = 0; x < 120; x += 12) R(g, '#241d19', x, y, 1, 6);
+      for (let y = 6; y < 120; y += 12) for (let x = 6; x < 120; x += 12) R(g, '#241d19', x, y, 1, 6);
+      R(g, '#241d19', 0, 0, 120, 4);
+      const win = (x, y) => {
+        R(g, '#e8e6df', x - 1, y - 1, 20, 26); R(g, '#bcd2de', x, y, 18, 24);
+        R(g, '#e8e6df', x + 8, y, 2, 24); R(g, '#e8e6df', x, y + 7, 18, 2); R(g, '#e8e6df', x, y + 15, 18, 2);
+      };
+      win(16, 16); win(72, 16); win(16, 64);
+      R(g, '#e8e6df', 67, 56, 28, 60);
+      R(g, '#0e0e10', 71, 62, 20, 54);
+      R(g, '#1c1c20', 73, 64, 7, 22); R(g, '#1c1c20', 82, 64, 7, 22);
+      R(g, '#1c1c20', 73, 90, 7, 16); R(g, '#1c1c20', 82, 90, 7, 16);
+      R(g, '#c9a23a', 88, 92, 2, 3);
+      R(g, '#e8e6df', 71, 56, 20, 4);
+      UKP.drawTextCentered(g, '10', 81, 66, 1, '#e8e6df');
+    });
+    S.rail_iron = make(40, 28, g => {
+      R(g, '#2a2622', 0, 22, 40, 6);
+      R(g, '#15161a', 0, 2, 40, 3);
+      for (let x = 2; x < 40; x += 5) { R(g, '#15161a', x, 2, 2, 22); R(g, '#15161a', x, 0, 2, 2); }
+    });
+    S.pave_dark = make(40, 28, g => {
+      R(g, '#5a5e63', 0, 0, 40, 28); R(g, '#454a4f', 0, 0, 40, 2);
+      R(g, '#454a4f', 0, 0, 1, 28); R(g, '#454a4f', 20, 0, 1, 28);
+    });
+    // Riverside (London Eye): Thames + Victorian embankment
+    S.bld_river = make(120, 120, g => {
+      R(g, '#3f6f93', 0, 0, 120, 52);
+      for (let x = 0; x < 120; x += 8) R(g, '#5a86a8', x, 14 + ((x / 8) % 3) * 9, 5, 1);
+      R(g, '#7e8aa0', 0, 46, 120, 3);
+      R(g, '#c7bd9c', 0, 52, 120, 68);
+      R(g, '#a89c78', 0, 52, 120, 3);
+      for (let x = 0; x < 120; x += 24) { R(g, '#a89c78', x + 8, 60, 8, 50); R(g, '#9a8e6c', x + 9, 62, 6, 44); }
+    });
+    S.rail_stone = make(40, 28, g => {
+      R(g, '#c7bd9c', 0, 22, 40, 6); R(g, '#c7bd9c', 0, 0, 40, 4);
+      for (let x = 3; x < 40; x += 8) R(g, '#b3a884', x, 4, 4, 18);
+    });
+    S.pave_stone = make(40, 28, g => {
+      R(g, '#cabf9e', 0, 0, 40, 28); R(g, '#b3a884', 0, 0, 40, 2);
+      R(g, '#b3a884', 0, 0, 1, 28); R(g, '#b3a884', 20, 0, 1, 28);
+    });
+    // Tower Bridge: river + blue steelwork
+    S.bld_bridge = make(120, 120, g => {
+      R(g, '#3f6f93', 0, 0, 120, 40);
+      for (let x = 0; x < 120; x += 8) R(g, '#5a86a8', x, 12 + ((x / 8) % 3) * 7, 5, 1);
+      R(g, '#27407a', 0, 40, 120, 80);
+      R(g, '#3556a0', 0, 40, 120, 6);
+      for (let x = 4; x < 120; x += 12) R(g, '#1d3060', x, 50, 3, 70);
+      g.strokeStyle = '#3556a0'; g.lineWidth = 2; g.beginPath();
+      for (let x = 0; x <= 120; x += 20) g.lineTo(x, 44 + Math.abs((x % 40) - 20) / 3);
+      g.stroke();
+    });
+    S.rail_blue = make(40, 28, g => {
+      R(g, '#27407a', 0, 22, 40, 6); R(g, '#3556a0', 0, 2, 40, 3);
+      for (let x = 2; x < 40; x += 5) R(g, '#3556a0', x, 2, 2, 22);
+    });
+    S.road_deck = make(40, 28, g => {
+      R(g, '#3a3d42', 0, 0, 40, 28); R(g, '#2c2f33', 0, 0, 40, 2);
+      R(g, '#d8c84a', 14, 4, 12, 3);
+    });
+    // Westminster: Portland-stone gothic facade
+    S.bld_parl = make(120, 120, g => {
+      R(g, '#c7bd9c', 0, 0, 120, 120);
+      R(g, '#b3a884', 0, 0, 120, 4);
+      for (let x = 0; x < 120; x += 30) R(g, '#b3a884', x, 0, 3, 120);
+      const win = (x, y) => {
+        R(g, '#c7bd9c', x + 3, y - 4, 6, 5);
+        R(g, '#3a4a55', x, y, 12, 28); R(g, '#2a3640', x + 2, y + 2, 8, 24);
+        R(g, '#b3a884', x + 5, y, 2, 28);
+      };
+      for (let x = 9; x < 116; x += 30) { win(x, 18); win(x, 66); }
+      R(g, '#b3a884', 0, 52, 120, 2);
+    });
+
+    // red brick — the throwable once the coppers have nicked all the bins
+    S.brick = make(16, 10, g => {
+      R(g, '#9a3b2a', 0, 0, 16, 10);
+      R(g, '#b5503a', 0, 0, 16, 2);
+      R(g, '#7a2c1f', 0, 8, 16, 2);
+      R(g, '#6e2418', 5, 0, 1, 10); R(g, '#6e2418', 10, 0, 1, 10);
+    });
+
+    // "Bin There, Nicked That" — two coppers loading a wheelie bin into a riot van
+    S.binvan = make(112, 54, g => {
+      R(g, C.TIRE, 54, 46, 12, 6); R(g, C.TIRE, 94, 46, 12, 6);
+      R(g, '#eef1f4', 42, 14, 70, 34);
+      R(g, '#cdd2d6', 46, 18, 16, 12); R(g, '#2b3a52', 48, 20, 12, 8);
+      for (let i = 0; i < 8; i++) { const x = 44 + i * 8; R(g, (i % 2 ? C.CARB : C.CARY), x, 30, 8, 6); R(g, (i % 2 ? C.CARY : C.CARB), x, 36, 8, 5); }
+      R(g, '#1a1a1a', 62, 8, 22, 6); R(g, C.LIGHTB, 64, 9, 8, 3); R(g, C.LIGHTR, 76, 9, 8, 3);
+      R(g, '#20242a', 100, 16, 12, 30);
+      UKP.drawTextCentered(g, 'POLICE', 74, 20, 1, '#163e9e');
+      // the nicked bin, carried, slightly tilted
+      R(g, '#222428', 22, 24, 14, 20); R(g, '#34373c', 22, 22, 14, 3); R(g, '#0c0c0c', 24, 44, 3, 2); R(g, '#0c0c0c', 31, 44, 3, 2);
+      // copper on each end
+      R(g, C.UNIF, 4, 28, 8, 18); R(g, C.HELM, 5, 20, 6, 7); R(g, C.SILVER, 7, 22, 2, 2); R(g, C.SKIN, 6, 27, 4, 2);
+      R(g, C.UNIF, 36, 28, 8, 18); R(g, C.HELM, 37, 20, 6, 7); R(g, C.SILVER, 39, 22, 2, 2); R(g, C.SKIN, 36, 27, 4, 2);
+    });
+
+    // the BIG BIN — a big green commercial bin to charge the line with
+    S.bigbin = make(44, 40, g => {
+      R(g, '#2f7d3a', 2, 7, 40, 27);
+      R(g, '#256b30', 2, 7, 40, 3);
+      R(g, '#3a8f46', 4, 10, 34, 4);
+      R(g, '#1f5a28', 2, 18, 40, 2);
+      R(g, '#1f5a28', 14, 7, 2, 27); R(g, '#1f5a28', 28, 7, 2, 27);
+      R(g, '#1f5a28', 2, 31, 40, 3);
+      R(g, '#20242a', 0, 2, 44, 5); R(g, '#34373c', 0, 2, 44, 2);
+      R(g, '#111111', 6, 34, 5, 4); R(g, '#111111', 18, 34, 5, 4); R(g, '#111111', 30, 34, 5, 4);
+      R(g, '#cfe0cf', 22, 22, 8, 6); // a logo-ish white panel
+    });
+    // a hooded mate (helps push the bin)
+    S.mate = make(22, 42, g => {
+      R(g, '#4a4f55', 5, 4, 12, 9);
+      R(g, '#3a3f45', 6, 13, 10, 3);
+      R(g, C.SKIN, 8, 9, 6, 4); R(g, '#2e3338', 8, 9, 6, 1);
+      R(g, '#3a3f45', 5, 14, 12, 15);
+      R(g, '#2e3338', 5, 14, 3, 15);
+      R(g, '#3a3f45', 2, 16, 4, 7); R(g, C.SKIN, 2, 22, 3, 2);
+      R(g, '#2a2d31', 7, 29, 4, 10); R(g, '#2a2d31', 12, 29, 4, 10);
+      R(g, '#141414', 6, 39, 5, 3); R(g, '#141414', 12, 39, 5, 3);
     });
   };
 })(window.UKP);

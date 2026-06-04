@@ -1,8 +1,9 @@
-# UK POLICE — No Nonsense
+# Nick the Bin
 
 A daft 8-bit British beat-'em-up. You are **British Man** (mustache, Union Jack
-tee, leather jacket). Lug **wheelie bins** at custodian-helmet bobbies who are
-thoroughly unimpressed: *"I don't think so, mate."* Old-school arcade vibe.
+jumper, leather jacket). Lug **wheelie bins** at custodian-helmet bobbies who
+complain in puns (*"I've bin hit!"*) while you reply *"I don't think so, mate."*
+Old-school arcade vibe.
 
 > Fiction / comedy. Cartoon ragdoll bobbies, no blood, no real people.
 
@@ -35,12 +36,19 @@ throws it if you're carrying one, otherwise throws a punch.
 
 ## How it plays
 
-- Side-scrolling brawler across **5 themed London stages**, each longer with
-  faster, more numerous officers:
-  1. **Brick Lane** 2. **10 Downing Street** (boss: **PM Starmer** — silver hair,
-  glasses, suit & red tie) 3. **London Eye** 4. **Tower Bridge** 5. **Westminster**.
-- Officers heckle you on the way in, complain ("OUCH!", "ME HELMET!") when you
-  hit them, and the hero fires back his catchphrase: *"I don't think so, mate."*
+- Side-scrolling brawler across **6 themed London stages**, each with its own
+  whole environment (buildings, ground, railings, skyline) and rising difficulty:
+  1. **Brick Lane** — bins
+  2. **10 Downing Street** — bins · boss **PM Starmer** (pixelated from the real
+     photo) · "TWO-TIER KEIR" graffiti
+  3. **Bin There, Nicked That** — the coppers nick all the bins (riot van scene)
+  4. **London Eye** — *bins are gone; now you throw **red bricks***
+  5. **Tower Bridge** — bricks; ends with the **BIG BIN charge** (grab the big
+     green bin with two mates and shove the line — press SPACE by it)
+  6. **BIG BIN** — the Big Ben finale (Big Bin / Big Ben)
+- Officers heckle on the way in, complain in puns when hit (*"WAS THAT A BIN?",
+  "I'VE BIN HIT!"*; bricks get *"I'VE BIN BRICKED!"*), and the hero replies
+  *"I don't think so, mate."*
 - Two ways to take a bobby down:
   - **Bin him** — throw a wheelie bin (one hit drops a regular officer).
   - **Stomp him** — jump on his helmet. He takes a knee for a few seconds.

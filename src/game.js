@@ -11,19 +11,24 @@ window.UKP = window.UKP || {};
     "OI! YOU'RE NICKED!", "NOT ON MY WATCH, SUNSHINE.", "'ELLO 'ELLO 'ELLO.",
     "MIND THE BINS, YOU MUPPET!", "STOP RIGHT THERE!", "THAT'S 80 QUID, MATE.",
   ];
-  // cops complain when you hit them
-  const COP_HIT = ["OUCH!", "OW!", "OI! THAT HURT!", "GERROFF!", "ME HELMET!", "BLIMEY!", "NOT CRICKET!", "ARGH!"];
+  // cops complain when you hit them — with bin/brick puns
+  const COP_HIT_BIN = ["WAS THAT A BIN?", "I'VE BEEN HIT BY A BIN!", "I'VE BIN HIT!", "OI! NOT THE BIN!",
+    "OUCH, ME HELMET!", "BINNED!", "THAT'S RUBBISH!", "TALK ABOUT WASTE DISPOSAL!"];
+  const COP_HIT_BRICK = ["WAS THAT A BRICK?", "I'VE BIN BRICKED!", "OW! A BRICK!", "BLIMEY, A BRICK!",
+    "NOT CRICKET!", "ME HELMET!", "THICK AS A BRICK!"];
+  const hitLines = () => (G.cfg && G.cfg.weapon === 'brick') ? COP_HIT_BRICK : COP_HIT_BIN;
   // the hero's catchphrases (in reply)
   const HERO_LINES = ["I DON'T THINK SO, MATE.", "DON'T THINK YOU 'AVE, MATE.", "NOT TODAY, OFFICER."];
   const BOSS_LINES = ["YOU'RE GOING DAHN THE NICK.", "I AM THE LAW.", "NICE TRY, SUNSHINE."];
   const BOSS_HIT = ["HOW DARE YOU!", "THIS IS AN OUTRAGE!", "MY OFFICE WILL HEAR OF THIS!", "STEADY ON!"];
 
   const STAGES = [
-    { name: 'BRICK LANE',       worldW: 2200, target: 5,  copSpeed: 34, copMax: 3, spawn: 1.8,  bossHp: 5,  bossName: 'SGT. NONSENSE', bossKind: 'chief',   sky: 'sky_generic', sign: ['NO', 'NONSENSE'] },
-    { name: '10 DOWNING STREET', worldW: 2400, target: 6,  copSpeed: 40, copMax: 3, spawn: 1.6,  bossHp: 8,  bossName: 'PM STARMER',    bossKind: 'starmer', sky: 'sky_downing', sign: ['NO.', '10'] },
-    { name: 'LONDON EYE',       worldW: 2600, target: 7,  copSpeed: 44, copMax: 4, spawn: 1.4,  bossHp: 8,  bossName: 'INSP. TRUNCHEON', bossKind: 'chief',  sky: 'sky_eye',     sign: ['MIND', 'THE GAP'] },
-    { name: 'TOWER BRIDGE',     worldW: 2800, target: 8,  copSpeed: 48, copMax: 4, spawn: 1.25, bossHp: 10, bossName: 'SUPT. KIPPER',   bossKind: 'chief',   sky: 'sky_bridge',  sign: ['KEEP', 'LEFT'] },
-    { name: 'WESTMINSTER',      worldW: 3200, target: 10, copSpeed: 54, copMax: 5, spawn: 1.1,  bossHp: 13, bossName: 'CHIEF PLOD',     bossKind: 'chief',   sky: 'sky_bigben',  sign: ['NO', 'NONSENSE'] },
+    { name: 'BRICK LANE', worldW: 2200, target: 5, copSpeed: 34, copMax: 3, spawn: 1.8, bossHp: 5, bossName: 'SGT. NONSENSE', bossKind: 'chief', weapon: 'bin', sky: 'sky_generic', sign: ['NO', 'NONSENSE'], theme: { building: 'houses', wall: 'wall', ground: 'pave' } },
+    { name: '10 DOWNING STREET', worldW: 2400, target: 6, copSpeed: 38, copMax: 3, spawn: 1.6, bossHp: 8, bossName: 'PM STARMER', bossKind: 'starmer', weapon: 'bin', sky: 'sky_downing', sign: ['NO.', '10'], graffiti: 'TWO-TIER KEIR', theme: { building: 'bld_downing', wall: 'rail_iron', ground: 'pave_dark' } },
+    { name: 'BIN THERE, NICKED THAT', worldW: 2500, target: 7, copSpeed: 42, copMax: 4, spawn: 1.45, bossHp: 8, bossName: 'SGT. SKIP', bossKind: 'chief', weapon: 'bin', binScene: true, sky: 'sky_generic', sign: ['BIN', 'AMNESTY'], theme: { building: 'houses', wall: 'rail_iron', ground: 'pave' } },
+    { name: 'LONDON EYE', worldW: 2600, target: 8, copSpeed: 46, copMax: 4, spawn: 1.3, bossHp: 10, bossName: 'INSP. TRUNCHEON', bossKind: 'chief', weapon: 'brick', sky: 'sky_eye', sign: ['MIND', 'THE GAP'], theme: { building: 'bld_river', wall: 'rail_stone', ground: 'pave_stone' } },
+    { name: 'TOWER BRIDGE', worldW: 2800, target: 9, copSpeed: 50, copMax: 5, spawn: 1.2, bossHp: 11, bossName: 'SUPT. KIPPER', bossKind: 'chief', weapon: 'brick', chargeEnd: true, sky: 'sky_bridge', sign: ['KEEP', 'LEFT'], theme: { building: 'bld_bridge', wall: 'rail_blue', ground: 'road_deck' } },
+    { name: 'BIG BIN', worldW: 3200, target: 11, copSpeed: 56, copMax: 5, spawn: 1.05, bossHp: 14, bossName: 'CHIEF PLOD', bossKind: 'chief', weapon: 'brick', sky: 'sky_bigben', sign: ['BIG', 'BIN'], theme: { building: 'bld_parl', wall: 'rail_stone', ground: 'pave_stone' } },
   ];
 
   const G = {
@@ -31,6 +36,7 @@ window.UKP = window.UKP || {};
     scrollX: 0, worldW: 2200, cfg: STAGES[0],
     player: null, cops: [], bins: [], projectiles: [], bubbles: [], props: { back: [], front: [] },
     defeated: 0, bossActive: false, boss: null, spawnT: 0, lineT: 0,
+    bigBin: null, charging: false, chargeT: 0,
     msg: null, msgSub: '', msgT: 0, msgPersist: false,
   };
   UKP.G = G;
@@ -57,15 +63,23 @@ window.UKP = window.UKP || {};
     G.player = { x: 80, y: GROUND_Y, vx: 0, vy: 0, facing: 1, onGround: true, carrying: null, hearts: 5, invuln: 0, action: 0, walkT: 0, walkF: 0, tex: 'man_idle' };
     G.cops = []; G.projectiles = []; G.bubbles = [];
     G.bins = [];
+    // the coppers have nicked all the bins from London Eye onward — you throw red bricks
     const colors = ['bin_blue', 'bin_brown', 'bin_grey'];
     let n = 0;
-    for (let x = 200; x < cfg.worldW - 160; x += 240) { G.bins.push({ x, y: GROUND_Y, key: colors[n % 3] }); n++; }
+    for (let x = 200; x < cfg.worldW - 160; x += 240) {
+      G.bins.push({ x, y: GROUND_Y, key: cfg.weapon === 'brick' ? 'brick' : colors[n % 3] }); n++;
+    }
     // props
     G.props = { back: [], front: [] };
     G.props.back.push({ img: 'car', x: cfg.worldW - 120, y: GROUND_Y + 4 });
     G.props.back.push({ img: 'sign', x: 150, y: GROUND_Y + 4 });
+    if (cfg.binScene) { // officers loading bins into a riot van
+      G.props.back.push({ img: 'binvan', x: Math.round(cfg.worldW * 0.42), y: GROUND_Y + 4 });
+      G.props.back.push({ img: 'binvan', x: Math.round(cfg.worldW * 0.72), y: GROUND_Y + 4 });
+    }
     for (let x = 220; x < cfg.worldW; x += 360) G.props.front.push({ img: 'lamp', x, y: GROUND_Y + 4 });
     G.defeated = 0; G.bossActive = false; G.boss = null; G.spawnT = 0; G.lineT = 0; G.scrollX = 0;
+    G.bigBin = null; G.charging = false; G.chargeT = 0;
     G.state = 'play';
     setMessage('STAGE ' + (G.stageIndex + 1), cfg.name, 1.7);
   }
@@ -92,6 +106,19 @@ window.UKP = window.UKP || {};
 
     // ---- play ----
     if (G.msgT > 0) { G.msgT -= dt; if (G.msgT <= 0 && !G.msgPersist) clearMessage(); }
+
+    // BIG BIN charge: player auto-runs right behind the big bin, ploughing through the line
+    if (G.charging) {
+      const pc = G.player;
+      G.chargeT += dt;
+      pc.facing = 1; pc.y = GROUND_Y; pc.vy = 0; pc.onGround = true;
+      pc.x = Math.min(pc.x + 230 * dt, G.worldW - 20);
+      pc.tex = (Math.floor(G.t * 10) % 2) ? 'man_walk1' : 'man_walk2';
+      G.scrollX = UKP.clamp(pc.x - 160, 0, Math.max(0, G.worldW - VW));
+      for (const c of G.cops) { if (!c.ko && c.x > pc.x - 30 && c.x < pc.x + 60) koCop(c); }
+      if (pc.x >= G.worldW - 22) { G.stageIndex++; startStage(); }
+      return;
+    }
 
     const p = G.player;
     const left = I().anyDown(['ArrowLeft', 'KeyA']);
@@ -152,6 +179,13 @@ window.UKP = window.UKP || {};
 
   function doAction() {
     const p = G.player;
+    // by the BIG BIN: the throw button charges instead of throwing
+    if (G.bigBin && !G.charging && Math.abs(p.x - G.bigBin.x) < 70) {
+      G.charging = true; G.chargeT = 0; p.carrying = null;
+      sfx().clear && sfx().clear();
+      setMessage('BIG BIN!', 'CHAAARGE!!!', 2);
+      return;
+    }
     if (p.carrying) { throwBin(); return; }
     // nearest bin
     let near = null, nd = 28;
@@ -194,14 +228,17 @@ window.UKP = window.UKP || {};
   }
 
   function updateSpawns(dt) {
-    if (G.bossActive) return;
+    if (G.bossActive || G.charging) return;
     G.spawnT += dt; G.lineT += dt;
     if (G.lineT >= 2.6) { G.lineT = 0; copChatter(); }
     if (G.spawnT >= G.cfg.spawn) {
       G.spawnT = 0;
       const alive = G.cops.filter(c => !c.ko && !c.isBoss).length;
-      if (G.defeated >= G.cfg.target) startBoss();
-      else if (alive < G.cfg.copMax) spawnCop(false);
+      if (G.defeated >= G.cfg.target) {
+        if (G.cfg.chargeEnd) {
+          if (!G.bigBin) { G.bigBin = { x: G.worldW - 110 }; setMessage('TO THE BIG BIN!', 'GET TO IT AND PRESS SPACE', 2.2); }
+        } else startBoss();
+      } else if (alive < G.cfg.copMax) spawnCop(false);
     }
   }
 
@@ -273,7 +310,7 @@ window.UKP = window.UKP || {};
   function heroReply() { if (Math.random() < 0.6) bubble(G.player.x, G.player.y - 52, UKP.choice(HERO_LINES), '#bfe3ff'); }
   function react(c, lines, col) { if (Math.random() < 0.6) bubble(c.x, c.y - 50, UKP.choice(lines), col || '#ffd23a'); heroReply(); }
 
-  function koCop(c) { koSprite(c); G.defeated++; G.score += 150; sfx().hit && sfx().hit(); react(c, COP_HIT); }
+  function koCop(c) { koSprite(c); G.defeated++; G.score += 150; sfx().hit && sfx().hit(); react(c, hitLines()); }
   function koSprite(c) { c.ko = true; c.vy = -200; c.vx = G.player.facing * 60; c.koT = 1.0; }
 
   function hitBoss(dmg) {
@@ -332,11 +369,14 @@ window.UKP = window.UKP || {};
     for (let i = 0; i < 6; i++) {
       ctx.drawImage(SP.cloud, Math.round(i * 150 - (cs % 150)), 56 + (i % 2) * 20);
     }
-    // houses / wall / pavement (scroll 1)
-    tile(ctx, SP.houses, 120, GROUND_Y - 120); // houses reach down to the pavement (no float)
-    tile(ctx, SP.wall, 40, GROUND_Y - 28);      // low wall + hedge sits on the pavement
-    tile(ctx, SP.pave, 40, GROUND_Y);
+    // per-level environment: building / wall+rail / ground (scroll 1)
+    const th = G.cfg.theme;
+    tile(ctx, SP[th.building], 120, GROUND_Y - 120); // reaches down to the pavement (no float)
+    tile(ctx, SP[th.wall], 40, GROUND_Y - 28);
+    tile(ctx, SP[th.ground], 40, GROUND_Y);
     ctx.fillStyle = UKP.C.ROAD; ctx.fillRect(0, 268, VW, VH - 268);
+    // optional wall graffiti (e.g. the No.10 hint)
+    if (G.cfg.graffiti) UKP.drawText(ctx, G.cfg.graffiti, Math.round(360 - G.scrollX), GROUND_Y - 78, 1, '#d23a3a');
     // back props (the sign shows this stage's text)
     for (const pr of G.props.back) {
       spr(ctx, SP[pr.img], pr.x, pr.y, 1, 1);
@@ -356,11 +396,23 @@ window.UKP = window.UKP || {};
     }
     // projectiles
     for (const b of G.projectiles) spr(ctx, SP[b.key], b.x, b.y, 1, 1, 1, b.rot);
+    // the BIG BIN waiting at the end of the line, with two mates
+    if (G.bigBin && !G.charging) {
+      spr(ctx, SP.mate, G.bigBin.x - 24, GROUND_Y, 1, 1);
+      spr(ctx, SP.bigbin, G.bigBin.x, GROUND_Y, 1, 1);
+      spr(ctx, SP.mate, G.bigBin.x + 24, GROUND_Y, -1, 1);
+    }
     // player
     const p = G.player;
     const pa = (p.invuln > 0 && Math.floor(p.invuln * 12) % 2) ? 0.3 : 1;
     if (p.carrying) spr(ctx, SP[p.carrying], p.x + p.facing * 2, p.y - 36, p.facing, 1, pa);
     spr(ctx, SP[p.tex], p.x, p.y, p.facing, 1, pa);
+    // CHARGE! the player and mates shove the big bin down the road
+    if (G.charging) {
+      spr(ctx, SP.mate, p.x - 18, GROUND_Y, 1, 1);
+      spr(ctx, SP.mate, p.x + 8, GROUND_Y, 1, 1);
+      spr(ctx, SP.bigbin, p.x + 34, GROUND_Y, 1, 1);
+    }
     // front props
     for (const pr of G.props.front) spr(ctx, SP[pr.img], pr.x, pr.y, 1, 1);
     // bubbles
@@ -401,9 +453,10 @@ window.UKP = window.UKP || {};
     // right
     UKP.drawText(ctx, 'POLICE OFFICER', VW - 152, 6, 1, '#ff8a3a');
     UKP.drawText(ctx, 'VILLAIN', VW - 152, 17, 1, '#ff8a3a');
-    ctx.fillStyle = '#222a3a'; ctx.fillRect(VW - 36, 6, 30, 30);
-    ctx.strokeRect(VW - 35.5, 6.5, 29, 29);
-    ctx.drawImage((G.bossActive && G.cfg.bossKind === 'starmer') ? SP.portrait_boss : SP.portrait_cop, VW - 35, 7);
+    const vp = (G.bossActive && G.cfg.bossKind === 'starmer') ? SP.portrait_boss : SP.portrait_cop;
+    ctx.fillStyle = '#222a3a'; ctx.fillRect(VW - 40, 4, 38, 38);
+    ctx.strokeRect(VW - 39.5, 4.5, 37, 37);
+    ctx.drawImage(vp, Math.round(VW - 40 + (38 - vp.width) / 2), Math.round(4 + (38 - vp.height) / 2));
     // boss bar
     const bx = VW - 152, by = 30, bw = 110;
     ctx.fillStyle = G.bossActive ? '#3a1414' : '#1a1f2a'; ctx.fillRect(bx, by, bw, 8);
@@ -427,7 +480,7 @@ window.UKP = window.UKP || {};
     spr2(ctx, SP.man_idle, 120, 248 + bob, 1, 1.6);
     spr2(ctx, SP.bin_blue, 240, 210, 1, 1.4);
     spr2(ctx, SP.cop_idle, 360, 248 - bob, -1, 1.6);
-    UKP.drawTextCentered(ctx, 'UK POLICE', VW / 2, 52, 4, '#ffffff');
+    UKP.drawTextCentered(ctx, 'NICK THE BIN', VW / 2, 52, 4, '#ffffff');
     UKP.drawTextCentered(ctx, 'NO NONSENSE', VW / 2, 92, 2, '#ffd23a');
     if (Math.floor(G.t * 2) % 2 === 0) UKP.drawTextCentered(ctx, 'PRESS ENTER OR CLICK', VW / 2, 150, 1, '#ffffff');
     UKP.drawTextCentered(ctx, 'MOVE  ARROWS    JUMP  UP    BIN/BASH  SPACE', VW / 2, 175, 1, '#dfe6ee');
