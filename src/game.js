@@ -6,18 +6,24 @@ window.UKP = window.UKP || {};
   const VW = 480, VH = 270, HUD_H = 46, GROUND_Y = 246;
   const GRAV = 900, SPEED = 130, JUMP = -330;
 
+  // cops heckle as they approach
   const COP_LINES = [
-    "I DON'T THINK SO, MATE.", "OI! YOU'RE NICKED!", "NOT ON MY WATCH, SUNSHINE.",
-    "'ELLO 'ELLO 'ELLO.", "MIND THE BINS, YOU MUPPET!", "STOP RIGHT THERE!",
-    "THAT'S 80 QUID, MATE.",
+    "OI! YOU'RE NICKED!", "NOT ON MY WATCH, SUNSHINE.", "'ELLO 'ELLO 'ELLO.",
+    "MIND THE BINS, YOU MUPPET!", "STOP RIGHT THERE!", "THAT'S 80 QUID, MATE.",
   ];
-  const COP_DOWN = ["BLIMEY!", "THAT'S NOT CRICKET!", "COR, ME HELMET!", "RIGHT, I'M OFF."];
+  // cops complain when you hit them
+  const COP_HIT = ["OUCH!", "OW!", "OI! THAT HURT!", "GERROFF!", "ME HELMET!", "BLIMEY!", "NOT CRICKET!", "ARGH!"];
+  // the hero's catchphrases (in reply)
+  const HERO_LINES = ["I DON'T THINK SO, MATE.", "DON'T THINK YOU 'AVE, MATE.", "NOT TODAY, OFFICER."];
   const BOSS_LINES = ["YOU'RE GOING DAHN THE NICK.", "I AM THE LAW.", "NICE TRY, SUNSHINE."];
+  const BOSS_HIT = ["HOW DARE YOU!", "THIS IS AN OUTRAGE!", "MY OFFICE WILL HEAR OF THIS!", "STEADY ON!"];
 
   const STAGES = [
-    { name: 'BRICK LANE', worldW: 2200, target: 6, copSpeed: 34, copMax: 3, spawn: 1.7, bossHp: 6, bossName: 'SGT. NONSENSE' },
-    { name: 'CAMDEN HIGH ST', worldW: 2600, target: 8, copSpeed: 42, copMax: 4, spawn: 1.4, bossHp: 8, bossName: 'INSP. TRUNCHEON' },
-    { name: 'WESTMINSTER', worldW: 3000, target: 10, copSpeed: 50, copMax: 5, spawn: 1.15, bossHp: 11, bossName: 'CHIEF PLOD' },
+    { name: 'BRICK LANE',       worldW: 2200, target: 5,  copSpeed: 34, copMax: 3, spawn: 1.8,  bossHp: 5,  bossName: 'SGT. NONSENSE', bossKind: 'chief',   sky: 'sky_generic', sign: ['NO', 'NONSENSE'] },
+    { name: '10 DOWNING STREET', worldW: 2400, target: 6,  copSpeed: 40, copMax: 3, spawn: 1.6,  bossHp: 8,  bossName: 'PM STARMER',    bossKind: 'starmer', sky: 'sky_downing', sign: ['NO.', '10'] },
+    { name: 'LONDON EYE',       worldW: 2600, target: 7,  copSpeed: 44, copMax: 4, spawn: 1.4,  bossHp: 8,  bossName: 'INSP. TRUNCHEON', bossKind: 'chief',  sky: 'sky_eye',     sign: ['MIND', 'THE GAP'] },
+    { name: 'TOWER BRIDGE',     worldW: 2800, target: 8,  copSpeed: 48, copMax: 4, spawn: 1.25, bossHp: 10, bossName: 'SUPT. KIPPER',   bossKind: 'chief',   sky: 'sky_bridge',  sign: ['KEEP', 'LEFT'] },
+    { name: 'WESTMINSTER',      worldW: 3200, target: 10, copSpeed: 54, copMax: 5, spawn: 1.1,  bossHp: 13, bossName: 'CHIEF PLOD',     bossKind: 'chief',   sky: 'sky_bigben',  sign: ['NO', 'NONSENSE'] },
   ];
 
   const G = {
@@ -141,6 +147,7 @@ window.UKP = window.UKP || {};
     c.knees += 1; c.kneel = 1.8; G.score += 50;
     if (c.knees >= 3) { koCop(c); return; }
     bubble(c.x, c.y - 50, c.knees === 1 ? 'OOF!' : 'OW! ME KNEES!', '#ffd23a');
+    heroReply();
   }
 
   function doAction() {
@@ -199,11 +206,14 @@ window.UKP = window.UKP || {};
   }
 
   function spawnCop(boss) {
+    const starmer = boss && G.cfg.bossKind === 'starmer';
+    const kind = starmer ? 'boss' : 'cop'; // chief bosses are just big bobbies
     const c = {
       x: UKP.clamp(G.scrollX + VW + 30, 20, G.worldW - 20), y: GROUND_Y,
-      vx: 0, vy: 0, facing: -1, ko: false, isBoss: !!boss, scale: boss ? 1.5 : 1,
+      vx: 0, vy: 0, facing: -1, ko: false, isBoss: !!boss, scale: boss ? (starmer ? 1.4 : 1.5) : 1,
       hp: boss ? G.cfg.bossHp : 1, speed: boss ? G.cfg.copSpeed * 0.7 : G.cfg.copSpeed + UKP.randInt(-6, 10),
-      nextPunch: 0, nextLine: G.t + UKP.rand(1.5, 4), flash: 0, walkT: 0, walkF: 0, punch: 0, tex: 'cop_idle', koT: 0, rot: 0,
+      nextPunch: 0, nextLine: G.t + UKP.rand(1.5, 4), flash: 0, walkT: 0, walkF: 0, punch: 0,
+      kind: kind, tex: kind + '_idle', koT: 0, rot: 0,
       kneel: 0, knees: 0,
     };
     G.cops.push(c);
@@ -228,7 +238,7 @@ window.UKP = window.UKP || {};
         continue;
       }
       if (c.kneel > 0) { // stunned on one knee — can't chase or punch
-        c.kneel -= dt; c.vx = 0; c.tex = 'cop_kneel';
+        c.kneel -= dt; c.vx = 0; c.tex = c.kind + '_kneel';
         c.facing = (p.x < c.x) ? -1 : 1;
         continue;
       }
@@ -239,13 +249,13 @@ window.UKP = window.UKP || {};
       if (Math.abs(dx) > range) {
         c.vx = dir * c.speed; c.x += c.vx * dt;
         c.walkT += dt; if (c.walkT > 0.14) { c.walkT = 0; c.walkF ^= 1; }
-        c.tex = c.walkF ? 'cop_walk1' : 'cop_walk2';
+        c.tex = c.kind + (c.walkF ? '_walk1' : '_walk2');
       } else {
         c.vx = 0;
         if (G.t > c.nextPunch && Math.abs(p.y - c.y) < 34) {
           c.punch = 0.18; c.nextPunch = G.t + (c.isBoss ? 0.9 : 1.2); hurtPlayer();
         }
-        if (c.punch > 0) { c.punch -= dt; c.tex = 'cop_punch'; } else c.tex = 'cop_idle';
+        if (c.punch > 0) { c.punch -= dt; c.tex = c.kind + '_punch'; } else c.tex = c.kind + '_idle';
       }
       if (!c.isBoss && G.t > c.nextLine) { c.nextLine = G.t + UKP.rand(4, 8); if (Math.random() < 0.5) bubble(c.x, c.y - 50, UKP.choice(COP_LINES), '#cfe3ff'); }
     }
@@ -259,14 +269,18 @@ window.UKP = window.UKP || {};
     bubble(c.x, c.y - 50, UKP.choice(COP_LINES), '#cfe3ff');
   }
 
-  function koCop(c) { koSprite(c); G.defeated++; G.score += 150; sfx().hit && sfx().hit(); if (Math.random() < 0.6) bubble(c.x, c.y - 50, UKP.choice(COP_DOWN), '#ffffff'); }
+  // a hit reaction: the victim complains, the hero often replies with a catchphrase
+  function heroReply() { if (Math.random() < 0.6) bubble(G.player.x, G.player.y - 52, UKP.choice(HERO_LINES), '#bfe3ff'); }
+  function react(c, lines, col) { if (Math.random() < 0.6) bubble(c.x, c.y - 50, UKP.choice(lines), col || '#ffd23a'); heroReply(); }
+
+  function koCop(c) { koSprite(c); G.defeated++; G.score += 150; sfx().hit && sfx().hit(); react(c, COP_HIT); }
   function koSprite(c) { c.ko = true; c.vy = -200; c.vx = G.player.facing * 60; c.koT = 1.0; }
 
   function hitBoss(dmg) {
     const c = G.boss; if (!c) return;
     c.hp -= dmg; c.flash = 0.12; c.x += G.player.facing * 6; sfx().bossHit && sfx().bossHit(); G.score += 60;
     if (c.hp <= 0) defeatBoss();
-    else if (Math.random() < 0.5) bubble(c.x, c.y - 60, UKP.choice(BOSS_LINES), '#ff8a3a');
+    else react(c, BOSS_HIT, '#ff8a3a');
   }
   function defeatBoss() {
     koSprite(G.boss); G.boss = null; G.bossActive = false; G.score += 1000;
@@ -308,21 +322,30 @@ window.UKP = window.UKP || {};
     if (G.state === 'title') { renderTitle(ctx); return; }
 
     ctx.drawImage(SP.sky, 0, 0);
-    // clouds (slow parallax)
+    // landmark skyline for this stage (rises above the rooftops)
+    const lm = SP[G.cfg.sky] || SP.sky_generic;
+    const sk = G.scrollX * 0.4;
+    const ly = 138 - lm.height;
+    for (let x = -(((sk % 200) + 200) % 200); x < VW + 10; x += 200) ctx.drawImage(lm, Math.round(x), ly);
+    // clouds (slow parallax, in front of the landmark)
     const cs = G.scrollX * 0.18;
     for (let i = 0; i < 6; i++) {
       ctx.drawImage(SP.cloud, Math.round(i * 150 - (cs % 150)), 56 + (i % 2) * 20);
     }
-    // skyline
-    const sk = G.scrollX * 0.4;
-    for (let x = -((sk % 230) + 230) % 230; x < VW + 10; x += 230) ctx.drawImage(SP.skyline, Math.round(x), GROUND_Y - 96);
     // houses / wall / pavement (scroll 1)
-    tile(ctx, SP.houses, 120, 110);
-    tile(ctx, SP.wall, 40, 212);
-    tile(ctx, SP.pave, 40, 246);
+    tile(ctx, SP.houses, 120, GROUND_Y - 120); // houses reach down to the pavement (no float)
+    tile(ctx, SP.wall, 40, GROUND_Y - 28);      // low wall + hedge sits on the pavement
+    tile(ctx, SP.pave, 40, GROUND_Y);
     ctx.fillStyle = UKP.C.ROAD; ctx.fillRect(0, 268, VW, VH - 268);
-    // back props
-    for (const pr of G.props.back) spr(ctx, SP[pr.img], pr.x, pr.y, 1, 1);
+    // back props (the sign shows this stage's text)
+    for (const pr of G.props.back) {
+      spr(ctx, SP[pr.img], pr.x, pr.y, 1, 1);
+      if (pr.img === 'sign') {
+        const sxc = pr.x - G.scrollX;
+        UKP.drawTextCentered(ctx, G.cfg.sign[0], sxc, pr.y - 56, 1, '#202020');
+        UKP.drawTextCentered(ctx, G.cfg.sign[1], sxc, pr.y - 48, 1, '#202020');
+      }
+    }
     // bins
     for (const b of G.bins) spr(ctx, SP[b.key], b.x, b.y, 1, 1);
     // cops
@@ -380,7 +403,7 @@ window.UKP = window.UKP || {};
     UKP.drawText(ctx, 'VILLAIN', VW - 152, 17, 1, '#ff8a3a');
     ctx.fillStyle = '#222a3a'; ctx.fillRect(VW - 36, 6, 30, 30);
     ctx.strokeRect(VW - 35.5, 6.5, 29, 29);
-    ctx.drawImage(SP.portrait_cop, VW - 35, 7);
+    ctx.drawImage((G.bossActive && G.cfg.bossKind === 'starmer') ? SP.portrait_boss : SP.portrait_cop, VW - 35, 7);
     // boss bar
     const bx = VW - 152, by = 30, bw = 110;
     ctx.fillStyle = G.bossActive ? '#3a1414' : '#1a1f2a'; ctx.fillRect(bx, by, bw, 8);
@@ -396,7 +419,7 @@ window.UKP = window.UKP || {};
   function renderTitle(ctx) {
     const SP = UKP.SP;
     ctx.drawImage(SP.sky, 0, 0);
-    for (let x = 0; x < VW; x += 230) ctx.drawImage(SP.skyline, x, GROUND_Y - 96);
+    for (let x = 0; x < VW; x += 200) ctx.drawImage(SP.sky_bigben, x, 48);
     ctx.drawImage(SP.cloud, 60, 36); ctx.drawImage(SP.cloud, 330, 60);
     for (let x = 0; x < VW; x += 40) ctx.drawImage(SP.pave, x, 246);
     ctx.fillStyle = UKP.C.ROAD; ctx.fillRect(0, 268, VW, VH - 268);
@@ -429,7 +452,7 @@ window.UKP = window.UKP || {};
   };
 
   // deterministic test hook (lets a harness step the sim without relying on rAF cadence)
-  UKP._test = { update, checkStomp, stompCop, spawnCop, koCop, startStage };
+  UKP._test = { update, render, checkStomp, stompCop, spawnCop, koCop, startStage, startBoss };
 
   if (document.readyState === 'complete' || document.readyState === 'interactive') UKP.start();
   else window.addEventListener('DOMContentLoaded', UKP.start);

@@ -35,8 +35,12 @@ throws it if you're carrying one, otherwise throws a punch.
 
 ## How it plays
 
-- Side-scrolling brawler across **3 stages** (Brick Lane → Camden High St →
-  Westminster), each longer with faster, more numerous officers.
+- Side-scrolling brawler across **5 themed London stages**, each longer with
+  faster, more numerous officers:
+  1. **Brick Lane** 2. **10 Downing Street** (boss: **PM Starmer** — silver hair,
+  glasses, suit & red tie) 3. **London Eye** 4. **Tower Bridge** 5. **Westminster**.
+- Officers heckle you on the way in, complain ("OUCH!", "ME HELMET!") when you
+  hit them, and the hero fires back his catchphrase: *"I don't think so, mate."*
 - Two ways to take a bobby down:
   - **Bin him** — throw a wheelie bin (one hit drops a regular officer).
   - **Stomp him** — jump on his helmet. He takes a knee for a few seconds.

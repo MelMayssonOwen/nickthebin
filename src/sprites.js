@@ -9,6 +9,8 @@ window.UKP = window.UKP || {};
     JEANS: '#33538f', JEANSSH: '#274169', BOOT: '#281a0e', BLACK: '#141414',
     UNIF: '#20212b', UNIFSH: '#12131a', HELM: '#16161d', SILVER: '#c9ccd6',
     HEART: '#e23b3b', HEARTD: '#3a2630',
+    GREY: '#b9bdc1', GREYD: '#8c9195', BROW: '#4a4a4a', GLASS: '#14141a', LENS: '#aebdc9',
+    SUIT: '#23262e', SUITSH: '#14161c', TIE: '#c0263a', TIESH: '#8e1b2a',
     BRICK: '#7a4326', MORTAR: '#5c3320', PANE: '#bfe0f2', FRAME: '#ede9df', DOOR: '#274a8f', DOORK: '#16305f',
     HEDGE: '#3f7a3a', HEDGED: '#2d5a2a', WALL: '#8a5a36',
     PAVE: '#9aa0a6', PAVED: '#7d8389', ROAD: '#4a4d52',
@@ -77,8 +79,8 @@ window.UKP = window.UKP || {};
     }
   }
 
-  // ---- Officer parts (24x44) ----
-  function copHead(g) {
+  // ---- Officer / boss shared body parts (24x44) ----
+  function headCop(g) {
     R(g, C.HELM, 7, 1, 10, 8);
     R(g, C.BLACK, 7, 1, 1, 8); R(g, C.BLACK, 16, 1, 1, 8);
     R(g, C.SILVER, 11, 3, 2, 4);
@@ -87,57 +89,70 @@ window.UKP = window.UKP || {};
     R(g, C.BLACK, 10, 13, 1, 2); R(g, C.BLACK, 13, 13, 1, 2);
     R(g, C.MUST, 9, 16, 6, 1);
   }
-  function copTorso(g) {
+  // Boss: silver swept hair, dark rectangular glasses, clean-shaven (Starmer-ish)
+  function headBoss(g) {
+    R(g, C.GREY, 6, 1, 12, 4);
+    R(g, C.GREYD, 6, 1, 12, 1);
+    R(g, C.GREY, 6, 5, 2, 5); R(g, C.GREY, 16, 5, 2, 5);
+    R(g, C.GREYD, 6, 4, 4, 1);
+    R(g, C.SKIN, 8, 5, 8, 10);
+    R(g, C.GREY, 8, 5, 8, 1);
+    R(g, C.BROW, 9, 7, 6, 1);
+    R(g, C.GLASS, 8, 8, 8, 3);
+    R(g, C.LENS, 9, 9, 2, 1); R(g, C.LENS, 13, 9, 2, 1);
+    R(g, C.BLACK, 9, 9, 1, 1); R(g, C.BLACK, 14, 9, 1, 1);
+    R(g, C.SKIN, 12, 9, 1, 1);
+    R(g, C.GLASS, 7, 9, 1, 1); R(g, C.GLASS, 16, 9, 1, 1);
+    R(g, C.SKINSH, 11, 13, 2, 1);
+  }
+  function torsoCop(g) {
     R(g, C.UNIF, 5, 18, 14, 14);
     R(g, C.UNIFSH, 16, 18, 3, 14);
     R(g, C.BLACK, 8, 18, 8, 1);
     R(g, C.SILVER, 11, 20, 1, 1); R(g, C.SILVER, 11, 23, 1, 1); R(g, C.SILVER, 11, 26, 1, 1);
   }
-  function copArmsGuard(g) {
-    R(g, C.UNIF, 4, 18, 3, 7); R(g, C.UNIF, 4, 13, 3, 5); R(g, C.SKIN, 4, 11, 3, 3);
-    R(g, C.UNIF, 17, 18, 3, 7); R(g, C.UNIF, 17, 13, 3, 5); R(g, C.SKIN, 17, 11, 3, 3);
+  // Boss: charcoal suit, white shirt, red tie
+  function torsoBoss(g) {
+    R(g, C.SUIT, 5, 17, 14, 15);
+    R(g, C.SUITSH, 16, 17, 3, 15);
+    R(g, C.WHITE, 10, 17, 4, 9);
+    R(g, C.SUIT, 9, 17, 2, 6); R(g, C.SUIT, 14, 17, 2, 6);
+    R(g, C.TIE, 11, 18, 2, 10); R(g, C.TIESH, 11, 26, 2, 2); R(g, C.TIE, 11, 17, 2, 1);
   }
-  function copArmsPunch(g) {
-    R(g, C.UNIF, 2, 19, 5, 3); R(g, C.SKIN, 0, 19, 3, 3);
-    R(g, C.UNIF, 17, 18, 3, 7); R(g, C.UNIF, 17, 15, 3, 4); R(g, C.SKIN, 17, 13, 3, 3);
+  function armsGuardU(g, col) {
+    R(g, col, 4, 18, 3, 7); R(g, col, 4, 13, 3, 5); R(g, C.SKIN, 4, 11, 3, 3);
+    R(g, col, 17, 18, 3, 7); R(g, col, 17, 13, 3, 5); R(g, C.SKIN, 17, 11, 3, 3);
   }
-  function copLegs(g, pose) {
+  function armsPunchU(g, col) {
+    R(g, col, 2, 19, 5, 3); R(g, C.SKIN, 0, 19, 3, 3);
+    R(g, col, 17, 18, 3, 7); R(g, col, 17, 15, 3, 4); R(g, C.SKIN, 17, 13, 3, 3);
+  }
+  function legsU(g, pose, col, sh) {
     if (pose === 1) {
-      R(g, C.UNIF, 7, 32, 4, 10); R(g, C.BLACK, 6, 42, 5, 2);
-      R(g, C.UNIF, 13, 33, 4, 9); R(g, C.BLACK, 13, 43, 5, 1);
+      R(g, col, 7, 32, 4, 10); R(g, C.BLACK, 6, 42, 5, 2);
+      R(g, col, 13, 33, 4, 9); R(g, C.BLACK, 13, 43, 5, 1);
     } else if (pose === 2) {
-      R(g, C.UNIF, 7, 33, 4, 9); R(g, C.BLACK, 6, 43, 5, 1);
-      R(g, C.UNIF, 13, 32, 4, 10); R(g, C.BLACK, 13, 42, 5, 2);
+      R(g, col, 7, 33, 4, 9); R(g, C.BLACK, 6, 43, 5, 1);
+      R(g, col, 13, 32, 4, 10); R(g, C.BLACK, 13, 42, 5, 2);
     } else {
-      R(g, C.UNIF, 8, 32, 4, 10); R(g, C.UNIF, 13, 32, 4, 10);
-      R(g, C.UNIFSH, 16, 32, 1, 10);
+      R(g, col, 8, 32, 4, 10); R(g, col, 13, 32, 4, 10);
+      R(g, sh, 16, 32, 1, 10);
       R(g, C.BLACK, 7, 42, 5, 2); R(g, C.BLACK, 13, 42, 5, 2);
     }
   }
-
-  function copKneel(g) {
-    const dy = 10; // whole figure drops as he takes a knee
-    // legs: one knee down on the ground, one foot planted
-    R(g, C.UNIF, 13, 30, 4, 8); R(g, C.BLACK, 13, 42, 5, 2);
-    R(g, C.UNIF, 7, 32, 4, 5);
-    R(g, C.UNIF, 7, 37, 7, 3);
-    R(g, C.BLACK, 6, 40, 9, 3);
-    // torso (lowered)
-    R(g, C.UNIF, 5, 18 + dy, 14, 12);
-    R(g, C.UNIFSH, 16, 18 + dy, 3, 12);
-    R(g, C.BLACK, 8, 18 + dy, 8, 1);
-    R(g, C.SILVER, 11, 21 + dy, 1, 1); R(g, C.SILVER, 11, 24 + dy, 1, 1);
-    // slumped arms
-    R(g, C.UNIF, 4, 20 + dy, 3, 7); R(g, C.SKIN, 4, 27 + dy, 3, 2);
-    R(g, C.UNIF, 17, 20 + dy, 3, 7); R(g, C.SKIN, 17, 27 + dy, 3, 2);
-    // head (lowered, dejected)
-    R(g, C.HELM, 7, 1 + dy, 10, 8);
-    R(g, C.BLACK, 7, 1 + dy, 1, 8); R(g, C.BLACK, 16, 1 + dy, 1, 8);
-    R(g, C.SILVER, 11, 3 + dy, 2, 4);
-    R(g, C.BLACK, 6, 9 + dy, 12, 2);
-    R(g, C.SKIN, 9, 11 + dy, 6, 6);
-    R(g, C.BLACK, 10, 13 + dy, 1, 2); R(g, C.BLACK, 13, 13 + dy, 1, 2);
-    R(g, C.MUST, 9, 16 + dy, 6, 1);
+  // genuine one-knee pose: back knee on the ground, front foot planted, torso upright
+  function kneelU(g, headFn, col, sh) {
+    R(g, col, 6, 30, 4, 8);
+    R(g, col, 5, 38, 6, 3);
+    R(g, C.BLACK, 4, 41, 7, 3);
+    R(g, col, 11, 31, 5, 4);
+    R(g, col, 14, 34, 4, 8);
+    R(g, C.BLACK, 13, 42, 6, 2);
+    R(g, col, 7, 17, 12, 14);
+    R(g, sh, 16, 17, 3, 14);
+    R(g, col, 16, 19, 3, 8); R(g, C.SKIN, 16, 27, 3, 2);
+    R(g, col, 10, 23, 3, 5); R(g, C.SKIN, 11, 28, 3, 2);
+    g.save(); g.translate(0, 7); headFn(g); g.restore();
   }
 
   function bin(g, body, light, dark) {
@@ -187,6 +202,23 @@ window.UKP = window.UKP || {};
     R(g, C.MUST, 9, 21, 10, 2);
     R(g, C.UNIF, 4, 24, 20, 4);
   }
+  function portraitBoss(g) {
+    R(g, C.GREY, 5, 2, 18, 5);
+    R(g, C.GREYD, 5, 2, 18, 1);
+    R(g, C.GREY, 5, 7, 3, 9); R(g, C.GREY, 20, 7, 3, 9);
+    R(g, C.SKIN, 8, 6, 12, 14);
+    R(g, C.GREY, 8, 6, 12, 1);
+    R(g, C.BROW, 9, 10, 4, 1); R(g, C.BROW, 15, 10, 4, 1);
+    R(g, C.GLASS, 8, 11, 12, 4);
+    R(g, C.LENS, 9, 12, 4, 2); R(g, C.LENS, 15, 12, 4, 2);
+    R(g, C.BLACK, 10, 12, 2, 2); R(g, C.BLACK, 16, 12, 2, 2);
+    R(g, C.SKIN, 13, 12, 2, 2);
+    R(g, C.SKINSH, 12, 17, 4, 1);
+    R(g, C.SUIT, 4, 21, 20, 7);
+    R(g, C.WHITE, 11, 21, 6, 7);
+    R(g, C.TIE, 13, 21, 2, 7);
+    R(g, C.SUIT, 9, 21, 2, 5); R(g, C.SUIT, 17, 21, 2, 5);
+  }
 
   UKP.SP = {};
 
@@ -197,11 +229,18 @@ window.UKP = window.UKP || {};
     S.man_walk2 = make(24, 42, g => { manTorso(g); manArmsGuard(g); manLegs(g, 2); manHead(g); });
     S.man_throw = make(24, 42, g => { manTorso(g); manLegs(g, 0); manArmsThrow(g); manHead(g); });
 
-    S.cop_idle = make(24, 44, g => { copTorso(g); copArmsGuard(g); copLegs(g, 0); copHead(g); });
-    S.cop_walk1 = make(24, 44, g => { copTorso(g); copArmsGuard(g); copLegs(g, 1); copHead(g); });
-    S.cop_walk2 = make(24, 44, g => { copTorso(g); copArmsGuard(g); copLegs(g, 2); copHead(g); });
-    S.cop_punch = make(24, 44, g => { copTorso(g); copArmsPunch(g); copLegs(g, 0); copHead(g); });
-    S.cop_kneel = make(24, 44, copKneel);
+    const U = C.UNIF, US = C.UNIFSH, SU = C.SUIT, SS = C.SUITSH;
+    S.cop_idle = make(24, 44, g => { torsoCop(g); armsGuardU(g, U); legsU(g, 0, U, US); headCop(g); });
+    S.cop_walk1 = make(24, 44, g => { torsoCop(g); armsGuardU(g, U); legsU(g, 1, U, US); headCop(g); });
+    S.cop_walk2 = make(24, 44, g => { torsoCop(g); armsGuardU(g, U); legsU(g, 2, U, US); headCop(g); });
+    S.cop_punch = make(24, 44, g => { torsoCop(g); armsPunchU(g, U); legsU(g, 0, U, US); headCop(g); });
+    S.cop_kneel = make(24, 44, g => kneelU(g, headCop, U, US));
+
+    S.boss_idle = make(24, 44, g => { torsoBoss(g); armsGuardU(g, SU); legsU(g, 0, SU, SS); headBoss(g); });
+    S.boss_walk1 = make(24, 44, g => { torsoBoss(g); armsGuardU(g, SU); legsU(g, 1, SU, SS); headBoss(g); });
+    S.boss_walk2 = make(24, 44, g => { torsoBoss(g); armsGuardU(g, SU); legsU(g, 2, SU, SS); headBoss(g); });
+    S.boss_punch = make(24, 44, g => { torsoBoss(g); armsPunchU(g, SU); legsU(g, 0, SU, SS); headBoss(g); });
+    S.boss_kneel = make(24, 44, g => kneelU(g, headBoss, SU, SS));
 
     S.bin_blue = make(18, 24, g => bin(g, C.BINB, C.BINBL, C.BINBD));
     S.bin_brown = make(18, 24, g => bin(g, C.BINR, C.BINRL, C.BINRD));
@@ -212,6 +251,7 @@ window.UKP = window.UKP || {};
     S.flag = make(18, 12, flagUK);
     S.portrait_man = make(28, 28, portraitMan);
     S.portrait_cop = make(28, 28, portraitCop);
+    S.portrait_boss = make(28, 28, portraitBoss);
 
     // ---------- scenery ----------
     S.sky = make(VW, VH, g => {
@@ -223,18 +263,55 @@ window.UKP = window.UKP || {};
       R(g, C.CLOUD, 10, 8, 40, 10); R(g, C.CLOUD, 18, 3, 24, 8);
       R(g, C.CLOUD, 4, 12, 52, 6); R(g, '#dcecf7', 4, 16, 52, 2);
     });
-    S.skyline = make(220, 96, g => {
-      const Sc = C.SKYLINE, SD = C.SKYLINED;
-      R(g, Sc, 0, 60, 130, 36);
-      for (let i = 0; i < 9; i++) R(g, SD, 6 + i * 14, 52, 6, 10);
-      R(g, Sc, 150, 24, 22, 72);
-      R(g, SD, 150, 36, 22, 4);
-      R(g, C.CLOUD, 157, 38, 8, 8);
-      R(g, SD, 158, 40, 1, 4); R(g, SD, 161, 41, 3, 1);
-      R(g, Sc, 154, 14, 14, 12);
-      R(g, Sc, 158, 4, 6, 12);
-      R(g, Sc, 184, 50, 30, 46);
-      for (let i = 0; i < 3; i++) R(g, SD, 188 + i * 9, 44, 5, 8);
+    // landmark skylines (200x90, base ~y82, landmark rises into the sky above the rooftops)
+    const Sc = C.SKYLINE, SD = C.SKYLINED, WH = C.CLOUD;
+    S.sky_generic = make(200, 90, g => {
+      R(g, Sc, 0, 66, 200, 24);
+      for (let x = 2; x < 200; x += 24) { R(g, SD, x, 54, 16, 14); R(g, Sc, x + 10, 46, 4, 10); }
+    });
+    S.sky_bigben = make(200, 90, g => {
+      R(g, Sc, 0, 60, 116, 30);
+      for (let i = 0; i < 7; i++) R(g, SD, 6 + i * 15, 52, 7, 10);
+      R(g, Sc, 150, 16, 22, 74);
+      R(g, SD, 150, 30, 22, 3);
+      R(g, WH, 156, 32, 9, 9); R(g, SD, 160, 34, 1, 4); R(g, SD, 161, 37, 3, 1);
+      R(g, Sc, 153, 6, 16, 12);
+      R(g, Sc, 158, 0, 6, 8);
+      R(g, Sc, 176, 50, 24, 40);
+      for (let i = 0; i < 3; i++) R(g, SD, 180 + i * 7, 44, 4, 8);
+    });
+    S.sky_eye = make(200, 90, g => {
+      g.strokeStyle = Sc; g.fillStyle = Sc;
+      g.lineWidth = 3;
+      g.beginPath(); g.moveTo(86, 90); g.lineTo(100, 44); g.moveTo(114, 90); g.lineTo(100, 44); g.stroke();
+      R(g, SD, 96, 40, 8, 8);
+      g.lineWidth = 3; g.beginPath(); g.arc(100, 42, 34, 0, Math.PI * 2); g.stroke();
+      g.lineWidth = 1; g.beginPath();
+      for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8; g.moveTo(100, 42); g.lineTo(100 + Math.cos(a) * 34, 42 + Math.sin(a) * 34); }
+      g.stroke();
+      for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8; R(g, SD, Math.round(100 + Math.cos(a) * 34) - 2, Math.round(42 + Math.sin(a) * 34) - 2, 4, 4); }
+      R(g, Sc, 0, 82, 200, 8);
+    });
+    S.sky_bridge = make(200, 90, g => {
+      R(g, Sc, 0, 80, 200, 10);
+      const tower = (tx) => {
+        R(g, Sc, tx, 30, 26, 52); R(g, SD, tx + 5, 40, 16, 28);
+        R(g, Sc, tx - 2, 26, 30, 6); R(g, Sc, tx + 5, 16, 16, 12);
+        R(g, Sc, tx + 10, 8, 6, 10);
+        R(g, Sc, tx, 18, 4, 8); R(g, Sc, tx + 22, 18, 4, 8);
+      };
+      tower(40); tower(134);
+      R(g, Sc, 66, 30, 68, 6); R(g, Sc, 66, 64, 68, 6);
+      g.strokeStyle = Sc; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(2, 72); g.lineTo(40, 48); g.moveTo(160, 48); g.lineTo(198, 72); g.stroke();
+    });
+    S.sky_downing = make(200, 90, g => {
+      R(g, Sc, 0, 40, 200, 50);
+      for (let x = 6; x < 200; x += 22) R(g, SD, x, 28, 6, 12);
+      for (let x = 8; x < 200; x += 22) for (let y = 48; y < 84; y += 14) R(g, SD, x, y, 8, 8);
+      R(g, Sc, 99, 12, 2, 28);
+      R(g, WH, 101, 12, 16, 10);
+      R(g, C.SHIRTB, 101, 12, 16, 4); R(g, C.SHIRTR, 101, 17, 16, 2); R(g, C.SHIRTR, 108, 12, 2, 10);
     });
     S.houses = make(120, 120, g => {
       R(g, C.BRICK, 0, 0, 120, 120);
@@ -266,9 +343,7 @@ window.UKP = window.UKP || {};
     });
     S.sign = make(46, 60, g => {
       R(g, '#9a9a9a', 21, 22, 4, 38); R(g, C.SIGNB, 0, 0, 46, 24); R(g, C.SIGN, 2, 2, 42, 20);
-      UKP.drawTextCentered(g, 'NO', 23, 5, 1, '#202020');
-      UKP.drawTextCentered(g, 'NONSENSE', 23, 13, 1, '#202020');
-    });
+    }); // text drawn per-stage at render time
     S.car = make(76, 40, g => {
       R(g, C.TIRE, 12, 34, 12, 6); R(g, C.TIRE, 52, 34, 12, 6);
       R(g, '#55585c', 15, 36, 6, 2); R(g, '#55585c', 55, 36, 6, 2);
