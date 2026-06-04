@@ -41,12 +41,19 @@ window.UKP = window.UKP || {};
     R(g, C.SKINSH, 11, 10, 2, 1);
   }
   function manTorso(g) {
-    R(g, C.JACK, 5, 16, 14, 14);
-    R(g, C.JACKSH, 16, 16, 3, 14);
-    R(g, C.SHIRTB, 9, 18, 6, 9);
-    R(g, C.WHITE, 11, 18, 2, 9);
-    R(g, C.WHITE, 9, 21, 6, 2);
-    R(g, C.SHIRTR, 11, 20, 2, 2);
+    // open leather jacket: side panels + collar, jumper shows down the middle
+    R(g, C.JACK, 5, 16, 4, 14); R(g, C.JACK, 15, 16, 4, 14);
+    R(g, C.JACKSH, 17, 16, 2, 14);
+    R(g, C.JACK, 5, 16, 14, 2);
+    // Union Jack jumper (centre, prominent)
+    const jx = 8, jy = 18, jw = 8, jh = 12;
+    R(g, C.SHIRTB, jx, jy, jw, jh);
+    R(g, C.WHITE, jx, jy, 2, 2); R(g, C.WHITE, jx + jw - 2, jy, 2, 2);
+    R(g, C.WHITE, jx, jy + jh - 2, 2, 2); R(g, C.WHITE, jx + jw - 2, jy + jh - 2, 2, 2);
+    R(g, C.WHITE, jx + 2, jy, 4, jh);
+    R(g, C.WHITE, jx, jy + 4, jw, 4);
+    R(g, C.SHIRTR, jx + 3, jy, 2, jh);
+    R(g, C.SHIRTR, jx, jy + 5, jw, 2);
   }
   function manArmsGuard(g) {
     R(g, C.JACK, 4, 16, 3, 7); R(g, C.JACK, 4, 12, 3, 5); R(g, C.SKIN, 4, 10, 3, 3);
@@ -108,13 +115,45 @@ window.UKP = window.UKP || {};
     }
   }
 
+  function copKneel(g) {
+    const dy = 10; // whole figure drops as he takes a knee
+    // legs: one knee down on the ground, one foot planted
+    R(g, C.UNIF, 13, 30, 4, 8); R(g, C.BLACK, 13, 42, 5, 2);
+    R(g, C.UNIF, 7, 32, 4, 5);
+    R(g, C.UNIF, 7, 37, 7, 3);
+    R(g, C.BLACK, 6, 40, 9, 3);
+    // torso (lowered)
+    R(g, C.UNIF, 5, 18 + dy, 14, 12);
+    R(g, C.UNIFSH, 16, 18 + dy, 3, 12);
+    R(g, C.BLACK, 8, 18 + dy, 8, 1);
+    R(g, C.SILVER, 11, 21 + dy, 1, 1); R(g, C.SILVER, 11, 24 + dy, 1, 1);
+    // slumped arms
+    R(g, C.UNIF, 4, 20 + dy, 3, 7); R(g, C.SKIN, 4, 27 + dy, 3, 2);
+    R(g, C.UNIF, 17, 20 + dy, 3, 7); R(g, C.SKIN, 17, 27 + dy, 3, 2);
+    // head (lowered, dejected)
+    R(g, C.HELM, 7, 1 + dy, 10, 8);
+    R(g, C.BLACK, 7, 1 + dy, 1, 8); R(g, C.BLACK, 16, 1 + dy, 1, 8);
+    R(g, C.SILVER, 11, 3 + dy, 2, 4);
+    R(g, C.BLACK, 6, 9 + dy, 12, 2);
+    R(g, C.SKIN, 9, 11 + dy, 6, 6);
+    R(g, C.BLACK, 10, 13 + dy, 1, 2); R(g, C.BLACK, 13, 13 + dy, 1, 2);
+    R(g, C.MUST, 9, 16 + dy, 6, 1);
+  }
+
   function bin(g, body, light, dark) {
-    R(g, C.LIDK, 2, 0, 14, 1);
-    R(g, dark, 2, 1, 14, 3);
-    R(g, body, 3, 4, 12, 16);
-    R(g, light, 3, 4, 2, 16);
-    R(g, dark, 13, 4, 2, 16);
-    R(g, C.LIDK, 4, 20, 3, 2); R(g, C.LIDK, 11, 20, 3, 2);
+    // lid (overhangs slightly)
+    R(g, C.LIDK, 1, 0, 16, 1);
+    R(g, dark, 1, 1, 16, 3);
+    // body
+    R(g, body, 3, 4, 12, 14);
+    R(g, light, 3, 4, 2, 14);
+    R(g, dark, 13, 4, 2, 14);
+    R(g, body, 4, 18, 10, 2);
+    // one big wheel, on one side (the back)
+    R(g, '#0c0c0c', 2, 16, 8, 8);
+    R(g, '#2a2a2a', 3, 17, 6, 6);
+    R(g, '#5a5a5a', 4, 18, 4, 4);
+    R(g, '#0c0c0c', 5, 19, 2, 2);
   }
   function heart(g, col) {
     R(g, col, 1, 1, 2, 2); R(g, col, 6, 1, 2, 2);
@@ -162,10 +201,11 @@ window.UKP = window.UKP || {};
     S.cop_walk1 = make(24, 44, g => { copTorso(g); copArmsGuard(g); copLegs(g, 1); copHead(g); });
     S.cop_walk2 = make(24, 44, g => { copTorso(g); copArmsGuard(g); copLegs(g, 2); copHead(g); });
     S.cop_punch = make(24, 44, g => { copTorso(g); copArmsPunch(g); copLegs(g, 0); copHead(g); });
+    S.cop_kneel = make(24, 44, copKneel);
 
-    S.bin_blue = make(18, 22, g => bin(g, C.BINB, C.BINBL, C.BINBD));
-    S.bin_brown = make(18, 22, g => bin(g, C.BINR, C.BINRL, C.BINRD));
-    S.bin_grey = make(18, 22, g => bin(g, C.BING, C.BINGL, C.BINGD));
+    S.bin_blue = make(18, 24, g => bin(g, C.BINB, C.BINBL, C.BINBD));
+    S.bin_brown = make(18, 24, g => bin(g, C.BINR, C.BINRL, C.BINRD));
+    S.bin_grey = make(18, 24, g => bin(g, C.BING, C.BINGL, C.BINGD));
 
     S.heart = make(9, 8, g => heart(g, C.HEART));
     S.heart_empty = make(9, 8, g => heart(g, C.HEARTD));

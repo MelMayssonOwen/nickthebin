@@ -55,6 +55,7 @@ window.UKP = window.UKP || {};
     hit() { sweep(300, 90, 0.18, 'sawtooth', 0.16); },
     bossHit() { sweep(220, 70, 0.22, 'sawtooth', 0.18); },
     hurt() { sweep(360, 120, 0.22, 'triangle', 0.16); },
+    stomp() { sweep(200, 60, 0.16, 'square', 0.18); blip(110, 0.1, 'sawtooth', 0.12); },
     jump() { sweep(300, 560, 0.12, 'square', 0.08); },
     clear() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => blip(f, 0.16, 'square', 0.12), i * 110)); },
     over() { [392, 311, 247, 196].forEach((f, i) => setTimeout(() => blip(f, 0.22, 'triangle', 0.14), i * 160)); },

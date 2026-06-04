@@ -21,7 +21,7 @@ window.UKP = window.UKP || {};
   ];
 
   const G = {
-    state: 'title', t: 0, stageIndex: 0, score: 0, lives: 3,
+    state: 'title', t: 0, stageIndex: 0, score: 0,
     scrollX: 0, worldW: 2200, cfg: STAGES[0],
     player: null, cops: [], bins: [], projectiles: [], bubbles: [], props: { back: [], front: [] },
     defeated: 0, bossActive: false, boss: null, spawnT: 0, lineT: 0,
@@ -42,7 +42,7 @@ window.UKP = window.UKP || {};
 
   // ---------------- lifecycle ----------------
   function startGame() {
-    G.stageIndex = 0; G.score = 0; G.lives = 3;
+    G.stageIndex = 0; G.score = 0;
     startStage();
   }
   function startStage() {
@@ -115,8 +115,32 @@ window.UKP = window.UKP || {};
     G.scrollX = UKP.clamp(p.x - 160, 0, Math.max(0, G.worldW - VW));
 
     updateProjectiles(dt);
+    checkStomp();
     updateSpawns(dt);
     updateCops(dt);
+  }
+
+  // Jump on a copper's head -> he takes a knee. 3 knees and he's done.
+  function checkStomp() {
+    const p = G.player;
+    if (p.vy <= 0) return; // only while falling
+    for (const c of G.cops) {
+      if (c.ko) continue;
+      const copH = 44 * c.scale;
+      const headTop = c.y - copH;
+      if (Math.abs(p.x - c.x) < 11 + 4 * c.scale && p.y > headTop - 2 && p.y < headTop + 22 * c.scale) {
+        stompCop(c);
+        p.vy = -260; p.onGround = false; // bounce off his helmet
+        break;
+      }
+    }
+  }
+  function stompCop(c) {
+    sfx().stomp && sfx().stomp();
+    if (c.isBoss) { c.kneel = 0.6; hitBoss(1); return; }
+    c.knees += 1; c.kneel = 1.8; G.score += 50;
+    if (c.knees >= 3) { koCop(c); return; }
+    bubble(c.x, c.y - 50, c.knees === 1 ? 'OOF!' : 'OW! ME KNEES!', '#ffd23a');
   }
 
   function doAction() {
@@ -180,6 +204,7 @@ window.UKP = window.UKP || {};
       vx: 0, vy: 0, facing: -1, ko: false, isBoss: !!boss, scale: boss ? 1.5 : 1,
       hp: boss ? G.cfg.bossHp : 1, speed: boss ? G.cfg.copSpeed * 0.7 : G.cfg.copSpeed + UKP.randInt(-6, 10),
       nextPunch: 0, nextLine: G.t + UKP.rand(1.5, 4), flash: 0, walkT: 0, walkF: 0, punch: 0, tex: 'cop_idle', koT: 0, rot: 0,
+      kneel: 0, knees: 0,
     };
     G.cops.push(c);
     return c;
@@ -200,6 +225,11 @@ window.UKP = window.UKP || {};
       if (c.ko) {
         c.vy += GRAV * dt; c.x += c.vx * dt; c.y += c.vy * dt; c.rot += dt * 8 * (c.vx < 0 ? -1 : 1);
         c.koT -= dt;
+        continue;
+      }
+      if (c.kneel > 0) { // stunned on one knee — can't chase or punch
+        c.kneel -= dt; c.vx = 0; c.tex = 'cop_kneel';
+        c.facing = (p.x < c.x) ? -1 : 1;
         continue;
       }
       const dx = p.x - c.x;
@@ -250,13 +280,13 @@ window.UKP = window.UKP || {};
     if (p.invuln > 0) return;
     p.hearts -= 1; sfx().hurt && sfx().hurt();
     p.vx = -p.facing * 120; p.vy = -150; p.onGround = false;
-    if (p.hearts <= 0) { loseLife(); return; }
+    if (p.hearts <= 0) { gameOver(); return; }
     p.invuln = 0.9;
   }
-  function loseLife() {
-    G.lives -= 1;
-    if (G.lives < 0) { G.state = 'over'; setMessage('NICKED!', 'GAME OVER - PRESS ENTER'); sfx().over && sfx().over(); return; }
-    G.player.hearts = 5; G.player.invuln = 1.4;
+  function gameOver() {
+    G.state = 'over';
+    setMessage('NICKED!', 'GAME OVER - PRESS ENTER');
+    sfx().over && sfx().over();
   }
 
   // ---------------- render ----------------
@@ -343,9 +373,8 @@ window.UKP = window.UKP || {};
     UKP.drawText(ctx, 'BRITISH MAN', 42, 6, 1, '#ffffff');
     for (let i = 0; i < 5; i++) ctx.drawImage(i < G.player.hearts ? SP.heart : SP.heart_empty, 44 + i * 12, 18);
     UKP.drawText(ctx, 'SCORE ' + String(G.score).padStart(6, '0'), 42, 33, 1, '#ffd23a');
-    // middle
-    UKP.drawText(ctx, 'X ' + String(Math.max(0, G.lives)).padStart(2, '0'), 196, 14, 1, '#ffffff');
-    ctx.drawImage(SP.flag, 230, 12);
+    // middle — big Union Jack
+    ctx.drawImage(SP.flag, 216, 10, 36, 24);
     // right
     UKP.drawText(ctx, 'POLICE OFFICER', VW - 152, 6, 1, '#ff8a3a');
     UKP.drawText(ctx, 'VILLAIN', VW - 152, 17, 1, '#ff8a3a');
@@ -398,6 +427,9 @@ window.UKP = window.UKP || {};
     if (window.location.hash === '#play') startGame(); else G.state = 'title';
     UKP.run(update, render);
   };
+
+  // deterministic test hook (lets a harness step the sim without relying on rAF cadence)
+  UKP._test = { update, checkStomp, stompCop, spawnCop, koCop, startStage };
 
   if (document.readyState === 'complete' || document.readyState === 'interactive') UKP.start();
   else window.addEventListener('DOMContentLoaded', UKP.start);

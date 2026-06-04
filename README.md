@@ -27,7 +27,7 @@ Add `#play` to skip the title and drop straight into Stage 1 (for testing):
 | Action | Keys |
 |---|---|
 | Move | `←` `→` (or `A` `D`) |
-| Jump | `↑` (or `W`) |
+| Jump (and stomp) | `↑` (or `W`) |
 | Pick up bin / Throw bin / Bash | `SPACE` |
 
 `SPACE` is context-sensitive: grabs the nearest bin if one's by your feet,
@@ -37,10 +37,14 @@ throws it if you're carrying one, otherwise throws a punch.
 
 - Side-scrolling brawler across **3 stages** (Brick Lane → Camden High St →
   Westminster), each longer with faster, more numerous officers.
-- Knock out a target number of officers, then a **boss bobby** appears with a
-  health bar in the VILLAIN panel. Bin him enough to clear the stage.
-- 5 hearts per life, 3 lives. An officer's punch costs a heart. Clear all three
-  stages for **NO NONSENSE!**
+- Two ways to take a bobby down:
+  - **Bin him** — throw a wheelie bin (one hit drops a regular officer).
+  - **Stomp him** — jump on his helmet. He takes a knee for a few seconds.
+    **Three knees and he's done.**
+- Clear all the officers (a **boss bobby** with a VILLAIN health bar shows up as
+  the finale) to pass the stage.
+- You have **5 hearts**. An officer's punch costs one — **lose them all and it's
+  game over** (you're nicked). Clear all three stages for **NO NONSENSE!**
 - Officers heckle you with proper British nonsense as they close in.
 
 ## Why vanilla (not a framework)
