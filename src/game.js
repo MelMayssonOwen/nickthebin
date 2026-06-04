@@ -1,505 +1,404 @@
-/* UK POLICE — NO NONSENSE
- * A daft 8-bit British beat-'em-up. Lug wheelie bins at custodian-helmet bobbies
- * across three London streets. They are not impressed: "I don't think so, mate."
- *
- * Boot/title -> Game (side-scroll brawler) + UI (HUD overlay).
- */
+/* UK POLICE — NO NONSENSE (vanilla build)
+ * Side-scrolling bin-throwing brawler. Dependency-free: own loop, own input,
+ * pixel sprites + bitmap font. See README. */
 window.UKP = window.UKP || {};
-
 (function (UKP) {
-  const W = 480, H = 270, HUD_H = 46;
-  UKP.HUD_H = HUD_H;
-  UKP.bus = new Phaser.Events.EventEmitter();
-
-  const FONT = "'Press Start 2P', monospace";
-  const GROUND_Y = 246; // feet line
+  const VW = 480, VH = 270, HUD_H = 46, GROUND_Y = 246;
+  const GRAV = 900, SPEED = 130, JUMP = -330;
 
   const COP_LINES = [
-    "I don't think so, mate.",
-    "Oi! You're nicked!",
-    "Not on my watch, sunshine.",
-    "'Ello 'ello 'ello.",
-    "Mind the bins, you muppet!",
-    "Stop right there!",
-    "That's a £80 fixed penalty.",
+    "I DON'T THINK SO, MATE.", "OI! YOU'RE NICKED!", "NOT ON MY WATCH, SUNSHINE.",
+    "'ELLO 'ELLO 'ELLO.", "MIND THE BINS, YOU MUPPET!", "STOP RIGHT THERE!",
+    "THAT'S 80 QUID, MATE.",
   ];
-  const COP_DOWN = ["Blimey!", "That's not cricket!", "Cor, me helmet!", "Right, I'm off."];
-  const BOSS_LINES = ["You're going dahn the nick.", "I AM the long arm of the law.", "Nice try, sunshine."];
+  const COP_DOWN = ["BLIMEY!", "THAT'S NOT CRICKET!", "COR, ME HELMET!", "RIGHT, I'M OFF."];
+  const BOSS_LINES = ["YOU'RE GOING DAHN THE NICK.", "I AM THE LAW.", "NICE TRY, SUNSHINE."];
 
   const STAGES = [
-    { name: 'BRICK LANE',     worldW: 2200, target: 6,  copSpeed: 34, copMax: 3, spawnMs: 1700, bossHp: 6,  bossName: 'SGT. NONSENSE' },
-    { name: 'CAMDEN HIGH ST', worldW: 2600, target: 8,  copSpeed: 42, copMax: 4, spawnMs: 1400, bossHp: 8,  bossName: 'INSP. TRUNCHEON' },
-    { name: 'WESTMINSTER',    worldW: 3000, target: 10, copSpeed: 50, copMax: 5, spawnMs: 1150, bossHp: 11, bossName: 'CHIEF PLOD' },
+    { name: 'BRICK LANE', worldW: 2200, target: 6, copSpeed: 34, copMax: 3, spawn: 1.7, bossHp: 6, bossName: 'SGT. NONSENSE' },
+    { name: 'CAMDEN HIGH ST', worldW: 2600, target: 8, copSpeed: 42, copMax: 4, spawn: 1.4, bossHp: 8, bossName: 'INSP. TRUNCHEON' },
+    { name: 'WESTMINSTER', worldW: 3000, target: 10, copSpeed: 50, copMax: 5, spawn: 1.15, bossHp: 11, bossName: 'CHIEF PLOD' },
   ];
 
-  // ---------------------------------------------------------------- Boot/title
-  class BootScene extends Phaser.Scene {
-    constructor() { super('Boot'); }
+  const G = {
+    state: 'title', t: 0, stageIndex: 0, score: 0, lives: 3,
+    scrollX: 0, worldW: 2200, cfg: STAGES[0],
+    player: null, cops: [], bins: [], projectiles: [], bubbles: [], props: { back: [], front: [] },
+    defeated: 0, bossActive: false, boss: null, spawnT: 0, lineT: 0,
+    msg: null, msgSub: '', msgT: 0, msgPersist: false,
+  };
+  UKP.G = G;
 
-    create() {
-      this.registry.set('groundY', GROUND_Y);
-      UKP.buildTextures(this);
-      UKP.buildAnims(this);
-      UKP.buildSceneryTextures(this, W, H);
+  const I = () => UKP.input;
+  const sfx = () => UKP.sfx || {};
 
-      this.add.image(0, 0, 'sky').setOrigin(0, 0);
-      this.add.image(W / 2, 70, 'cloud').setScale(1.2);
-      this.add.image(W / 2 - 30, 150, 'skyline').setOrigin(0.5, 1).setScale(1.1);
-      this.add.tileSprite(0, GROUND_Y, W, 28, 'pave').setOrigin(0, 0);
-      this.add.rectangle(0, GROUND_Y + 28, W, H, UKP.C.ROAD).setOrigin(0, 0);
+  function setMessage(text, sub, hold) {
+    G.msg = text; G.msgSub = sub || '';
+    if (hold == null) { G.msgPersist = true; G.msgT = 0; }
+    else { G.msgPersist = false; G.msgT = hold; }
+  }
+  function clearMessage() { G.msg = null; G.msgPersist = false; G.msgT = 0; }
+  function bubble(x, y, text, color) { G.bubbles.push({ x, y, text, color: color || '#ffffff', life: 1.6, max: 1.6 }); }
 
-      const man = this.add.image(120, GROUND_Y + 2, 'man_idle').setOrigin(0.5, 1).setScale(1.7);
-      const cop = this.add.image(360, GROUND_Y + 2, 'cop_idle').setOrigin(0.5, 1).setScale(1.7).setFlipX(true);
-      this.add.image(240, GROUND_Y - 44, 'bin_blue').setScale(1.4);
-      this.tweens.add({ targets: man, y: man.y - 6, yoyo: true, repeat: -1, duration: 600 });
-      this.tweens.add({ targets: cop, y: cop.y - 6, yoyo: true, repeat: -1, duration: 600, delay: 300 });
+  // ---------------- lifecycle ----------------
+  function startGame() {
+    G.stageIndex = 0; G.score = 0; G.lives = 3;
+    startStage();
+  }
+  function startStage() {
+    const cfg = STAGES[G.stageIndex];
+    G.cfg = cfg; G.worldW = cfg.worldW;
+    G.player = { x: 80, y: GROUND_Y, vx: 0, vy: 0, facing: 1, onGround: true, carrying: null, hearts: 5, invuln: 0, action: 0, walkT: 0, walkF: 0, tex: 'man_idle' };
+    G.cops = []; G.projectiles = []; G.bubbles = [];
+    G.bins = [];
+    const colors = ['bin_blue', 'bin_brown', 'bin_grey'];
+    let n = 0;
+    for (let x = 200; x < cfg.worldW - 160; x += 240) { G.bins.push({ x, y: GROUND_Y, key: colors[n % 3] }); n++; }
+    // props
+    G.props = { back: [], front: [] };
+    G.props.back.push({ img: 'car', x: cfg.worldW - 120, y: GROUND_Y + 4 });
+    G.props.back.push({ img: 'sign', x: 150, y: GROUND_Y + 4 });
+    for (let x = 220; x < cfg.worldW; x += 360) G.props.front.push({ img: 'lamp', x, y: GROUND_Y + 4 });
+    G.defeated = 0; G.bossActive = false; G.boss = null; G.spawnT = 0; G.lineT = 0; G.scrollX = 0;
+    G.state = 'play';
+    setMessage('STAGE ' + (G.stageIndex + 1), cfg.name, 1.7);
+  }
 
-      this.add.text(W / 2, 52, 'UK POLICE', {
-        fontFamily: FONT, fontSize: '22px', color: '#ffffff', stroke: '#163e9e', strokeThickness: 6,
-      }).setOrigin(0.5);
-      this.add.text(W / 2, 80, 'NO NONSENSE', {
-        fontFamily: FONT, fontSize: '11px', color: '#ffd23a', stroke: '#000000', strokeThickness: 4,
-      }).setOrigin(0.5);
+  // ---------------- update ----------------
+  function update(dt) {
+    G.t += dt;
+    // bubbles always animate
+    for (const b of G.bubbles) { b.life -= dt; b.y -= 7 * dt; }
+    G.bubbles = G.bubbles.filter(b => b.life > 0);
 
-      const prompt = this.add.text(W / 2, 132, 'PRESS ENTER OR TAP TO START', {
-        fontFamily: FONT, fontSize: '9px', color: '#ffffff', stroke: '#000000', strokeThickness: 3,
-      }).setOrigin(0.5);
-      this.tweens.add({ targets: prompt, alpha: 0.2, yoyo: true, repeat: -1, duration: 500 });
+    if (G.state === 'title') {
+      if (I().anyPressed(['Enter', 'Space'])) { sfx().pickup && sfx().pickup(); startGame(); }
+      return;
+    }
+    if (G.state === 'clear') {
+      if (I().anyPressed(['Enter', 'Space'])) { G.stageIndex++; startStage(); }
+      return;
+    }
+    if (G.state === 'over' || G.state === 'win') {
+      if (I().anyPressed(['Enter', 'Space', 'KeyR'])) { clearMessage(); G.state = 'title'; }
+      return;
+    }
 
-      this.add.text(W / 2, 154, 'MOVE  < >      JUMP  ^ / W      BIN / BASH  SPACE', {
-        fontFamily: FONT, fontSize: '6px', color: '#dfe6ee', stroke: '#000000', strokeThickness: 2,
-      }).setOrigin(0.5);
+    // ---- play ----
+    if (G.msgT > 0) { G.msgT -= dt; if (G.msgT <= 0 && !G.msgPersist) clearMessage(); }
 
-      const start = () => { UKP.unlockAudio(); this.scene.start('Game', { stage: 0, score: 0, lives: 3 }); };
-      this.input.keyboard.once('keydown-ENTER', start);
-      this.input.keyboard.once('keydown-SPACE', start);
-      this.input.once('pointerdown', start);
-      if (window.location.hash === '#play') this.time.delayedCall(50, start);
+    const p = G.player;
+    const left = I().anyDown(['ArrowLeft', 'KeyA']);
+    const right = I().anyDown(['ArrowRight', 'KeyD']);
+    const jump = I().anyPressed(['ArrowUp', 'KeyW']);
+    const act = I().pressed('Space');
+
+    p.vx = left ? -SPEED : right ? SPEED : 0;
+    if (p.vx < 0) p.facing = -1; else if (p.vx > 0) p.facing = 1;
+    if (jump && p.onGround) { p.vy = JUMP; p.onGround = false; sfx().jump && sfx().jump(); }
+
+    p.vy += GRAV * dt;
+    p.y += p.vy * dt;
+    if (p.y >= GROUND_Y) { p.y = GROUND_Y; p.vy = 0; p.onGround = true; }
+    p.x = UKP.clamp(p.x + p.vx * dt, 16, G.worldW - 16);
+    if (p.invuln > 0) p.invuln -= dt;
+    if (p.action > 0) p.action -= dt;
+    if (act) doAction();
+
+    // player animation
+    if (p.action > 0) p.tex = 'man_throw';
+    else if (!p.onGround) p.tex = 'man_idle';
+    else if (p.vx !== 0) { p.walkT += dt; if (p.walkT > 0.12) { p.walkT = 0; p.walkF ^= 1; } p.tex = p.walkF ? 'man_walk1' : 'man_walk2'; }
+    else p.tex = 'man_idle';
+
+    // camera
+    G.scrollX = UKP.clamp(p.x - 160, 0, Math.max(0, G.worldW - VW));
+
+    updateProjectiles(dt);
+    updateSpawns(dt);
+    updateCops(dt);
+  }
+
+  function doAction() {
+    const p = G.player;
+    if (p.carrying) { throwBin(); return; }
+    // nearest bin
+    let near = null, nd = 28;
+    for (const b of G.bins) { const d = Math.abs(b.x - p.x); if (d < nd) { nd = d; near = b; } }
+    if (near) { p.carrying = near.key; G.bins = G.bins.filter(b => b !== near); p.action = 0.18; sfx().pickup && sfx().pickup(); return; }
+    bash();
+  }
+  function throwBin() {
+    const p = G.player;
+    const key = p.carrying; p.carrying = null; p.action = 0.26; p.tex = 'man_throw';
+    G.projectiles.push({ x: p.x + p.facing * 10, y: p.y - 36, vx: p.facing * 250, vy: -210, key, rot: 0 });
+    sfx().throw && sfx().throw();
+    if (Math.random() < 0.4) bubble(p.x, p.y - 50, 'HAVE IT!', '#ffffff');
+  }
+  function bash() {
+    const p = G.player; p.action = 0.24; p.tex = 'man_throw';
+    let hit = false;
+    for (const c of G.cops) {
+      if (c.ko) continue;
+      const dx = (c.x - p.x) * p.facing;
+      if (dx > -6 && dx < 30 && Math.abs(c.y - p.y) < 30) { c.isBoss ? hitBoss(1) : koCop(c); hit = true; }
+    }
+    if (!hit) sfx().throw && sfx().throw();
+  }
+
+  function updateProjectiles(dt) {
+    for (const b of G.projectiles) {
+      b.vy += GRAV * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.rot += dt * 9 * Math.sign(b.vx || 1);
+      // cop collision
+      for (const c of G.cops) {
+        if (c.ko) continue;
+        if (Math.abs(b.x - c.x) < 14 && Math.abs(b.y - (c.y - 22)) < 26) {
+          b.dead = true; c.isBoss ? hitBoss(1) : koCop(c); break;
+        }
+      }
+      if (!b.dead && b.y >= GROUND_Y) { b.dead = true; G.bins.push({ x: UKP.clamp(b.x, 16, G.worldW - 16), y: GROUND_Y, key: b.key }); }
+      if (b.y > VH + 60) b.dead = true;
+    }
+    G.projectiles = G.projectiles.filter(b => !b.dead);
+  }
+
+  function updateSpawns(dt) {
+    if (G.bossActive) return;
+    G.spawnT += dt; G.lineT += dt;
+    if (G.lineT >= 2.6) { G.lineT = 0; copChatter(); }
+    if (G.spawnT >= G.cfg.spawn) {
+      G.spawnT = 0;
+      const alive = G.cops.filter(c => !c.ko && !c.isBoss).length;
+      if (G.defeated >= G.cfg.target) startBoss();
+      else if (alive < G.cfg.copMax) spawnCop(false);
     }
   }
 
-  // ------------------------------------------------------------------- Gameplay
-  class GameScene extends Phaser.Scene {
-    constructor() { super('Game'); }
-
-    init(data) {
-      this.stageIndex = data.stage || 0;
-      this.score = data.score || 0;
-      this.lives = (data.lives == null) ? 3 : data.lives;
-    }
-
-    create() {
-      const cfg = STAGES[this.stageIndex];
-      this.cfg = cfg;
-      this.registry.set('groundY', GROUND_Y);
-      this.physics.world.setBounds(0, 0, cfg.worldW, H);
-
-      UKP.buildBackground(this, cfg.worldW, W, H, HUD_H);
-
-      // invisible ground
-      this.ground = this.add.rectangle(cfg.worldW / 2, GROUND_Y + 8, cfg.worldW, 16, 0x000000, 0);
-      this.physics.add.existing(this.ground, true);
-
-      // player
-      const p = this.physics.add.sprite(80, GROUND_Y - 30, 'man_idle').setOrigin(0.5, 1);
-      p.setDepth(10);
-      p.body.setSize(13, 40).setOffset(5, 2);
-      p.setCollideWorldBounds(true);
-      this.physics.add.collider(p, this.ground);
-      this.player = p;
-      this.facing = 1;
-      this.invuln = false;
-      this.carrying = null;
-      this.actionLock = 0;
-
-      // groups
-      this.cops = this.physics.add.group();
-      this.bins = this.physics.add.group();       // pickups resting in the world
-      this.projectiles = this.physics.add.group(); // bins in flight
-
-      this.physics.add.collider(this.cops, this.ground);
-      this.physics.add.collider(this.bins, this.ground, (bin) => { bin.body.setVelocityX(0); });
-      this.physics.add.collider(this.projectiles, this.ground, (b) => this.binLands(b));
-      this.physics.add.overlap(this.projectiles, this.cops, (b, c) => this.binHitsCop(b, c));
-
-      // seed bins along the street
-      const colors = ['bin_blue', 'bin_brown', 'bin_grey'];
-      for (let x = 200; x < cfg.worldW - 160; x += 240) {
-        this.spawnBin(x, colors[(x / 240 | 0) % 3]);
-      }
-
-      // camera + HUD
-      this.cameras.main.setBounds(0, 0, cfg.worldW, H);
-      this.cameras.main.startFollow(p, true, 0.12, 0.12);
-      this.cameras.main.setFollowOffset(-40, 30);
-
-      if (!this.scene.isActive('UI')) this.scene.launch('UI');
-      this.time.delayedCall(0, () => {
-        UKP.bus.emit('score', this.score);
-        UKP.bus.emit('lives', this.lives);
-        UKP.bus.emit('hearts', 5);
-        UKP.bus.emit('boss', { active: false });
-        UKP.bus.emit('message', { text: 'STAGE ' + (this.stageIndex + 1), sub: cfg.name, hold: 1500 });
-      });
-
-      // state
-      this.hearts = 5;
-      this.defeated = 0;
-      this.boss = null;
-      this.bossPhase = false;
-      this.gameEnded = false;
-
-      // input
-      this.cursors = this.input.keyboard.createCursorKeys();
-      this.keys = this.input.keyboard.addKeys({
-        w: 'W', a: 'A', d: 'D', space: 'SPACE', r: 'R',
-      });
-      this.input.keyboard.on('keydown-SPACE', () => this.doAction());
-
-      // spawner
-      this.spawnTimer = this.time.addEvent({ delay: cfg.spawnMs, loop: true, callback: () => this.trySpawnCop() });
-      this.lineTimer = this.time.addEvent({ delay: 2600, loop: true, callback: () => this.copChatter() });
-    }
-
-    // ---- bins ----
-    spawnBin(x, key) {
-      const b = this.bins.create(x, GROUND_Y - 10, key).setOrigin(0.5, 1);
-      b.setDepth(9);
-      b.body.setSize(14, 18).setOffset(2, 3);
-      b.body.setCollideWorldBounds(true);
-      b.binKey = key;
-      return b;
-    }
-
-    binLands(b) {
-      if (!b.active) return;
-      b.body.setVelocity(0, 0);
-      b.body.setAllowGravity(true);
-      b.setAngularVelocity(0); b.setRotation(0);
-      this.projectiles.remove(b, false, false);
-      this.bins.add(b);
-      b.body.setSize(14, 18).setOffset(2, 3);
-    }
-
-    binHitsCop(b, c) {
-      if (!b.active || !c.active || c.ko) return;
-      b.destroy();
-      if (c.isBoss) this.hitBoss(c, 1);
-      else this.koCop(c);
-    }
-
-    // ---- action: throw / bash / pick up ----
-    doAction() {
-      const t = this.time.now;
-      if (this.gameEnded || t < this.actionLock) return;
-      const p = this.player;
-
-      if (this.carrying) { this.throwBin(); return; }
-
-      // grab a nearby bin
-      let nearest = null, nd = 30;
-      this.bins.getChildren().forEach(b => {
-        if (!b.active) return;
-        const d = Math.abs(b.x - p.x);
-        if (d < nd && Math.abs(b.y - p.y) < 40) { nd = d; nearest = b; }
-      });
-      if (nearest) { this.pickBin(nearest); return; }
-
-      this.bash();
-    }
-
-    pickBin(b) {
-      const key = b.binKey;
-      b.destroy();
-      const held = this.add.image(this.player.x, this.player.y - 44, key).setOrigin(0.5, 1).setDepth(12);
-      this.carrying = held;
-      this.carryKey = key;
-      this.actionLock = this.time.now + 180;
-      UKP.sfx.pickup();
-    }
-
-    throwBin() {
-      const p = this.player;
-      this.carrying.destroy();
-      this.carrying = null;
-      this.setPlayerTexture('man_throw');
-      this.actionLock = this.time.now + 260;
-
-      const b = this.projectiles.create(p.x + this.facing * 10, p.y - 36, this.carryKey).setOrigin(0.5, 1);
-      b.setDepth(11);
-      b.body.setSize(14, 18).setOffset(2, 3);
-      b.body.setAllowGravity(true);
-      b.setVelocity(this.facing * 250, -210);
-      b.setAngularVelocity(this.facing * 240);
-      UKP.sfx.throw();
-      if (Math.random() < 0.4) this.speak(p, "Have it!", '#ffffff', -52);
-    }
-
-    bash() {
-      const p = this.player;
-      this.setPlayerTexture('man_throw');
-      this.actionLock = this.time.now + 240;
-      const reach = 30;
-      let hit = false;
-      this.cops.getChildren().forEach(c => {
-        if (!c.active || c.ko) return;
-        const dx = (c.x - p.x) * this.facing;
-        if (dx > -6 && dx < reach && Math.abs(c.y - p.y) < 30) {
-          if (c.isBoss) this.hitBoss(c, 1); else this.koCop(c);
-          hit = true;
-        }
-      });
-      if (!hit) UKP.sfx.throw();
-    }
-
-    // ---- cops ----
-    trySpawnCop() {
-      if (this.gameEnded || this.bossPhase) return;
-      const aliveRegular = this.cops.getChildren().filter(c => c.active && !c.isBoss && !c.ko).length;
-      if (aliveRegular >= this.cfg.copMax) return;
-      if (this.defeated >= this.cfg.target) { this.startBoss(); return; }
-      this.spawnCop();
-    }
-
-    spawnCop(boss) {
-      const cam = this.cameras.main;
-      const fromRight = this.player.x < this.cfg.worldW - 200 ? true : false;
-      let x = fromRight ? cam.scrollX + W + 30 : Math.max(20, cam.scrollX - 30);
-      x = Phaser.Math.Clamp(x, 20, this.cfg.worldW - 20);
-      const c = this.cops.create(x, GROUND_Y - 32, 'cop_idle').setOrigin(0.5, 1);
-      c.setDepth(10);
-      c.body.setSize(13, 42).setOffset(5, 2);
-      c.ko = false;
-      c.isBoss = !!boss;
-      c.nextPunch = 0;
-      c.nextLine = this.time.now + Phaser.Math.Between(1500, 4000);
-      if (boss) {
-        c.setScale(1.5);
-        c.hp = this.cfg.bossHp;
-        c.speed = this.cfg.copSpeed * 0.7;
-      } else {
-        c.speed = this.cfg.copSpeed + Phaser.Math.Between(-6, 10);
-      }
-      return c;
-    }
-
-    startBoss() {
-      if (this.bossPhase) return;
-      this.bossPhase = true;
-      // clear stragglers gently
-      this.boss = this.spawnCop(true);
-      UKP.sfx.siren();
-      UKP.bus.emit('boss', { active: true, ratio: 1, name: this.cfg.bossName });
-      UKP.bus.emit('message', { text: 'VILLAIN!', sub: this.cfg.bossName, hold: 1500 });
-      this.speak(this.boss, Phaser.Utils.Array.GetRandom(BOSS_LINES), '#ff8a3a', -64);
-    }
-
-    hitBoss(c, dmg) {
-      c.hp -= dmg;
-      c.setTint(0xff6a6a);
-      this.time.delayedCall(120, () => c.active && c.clearTint());
-      c.body.setVelocityX(this.facing * 80);
-      UKP.sfx.bossHit();
-      UKP.bus.emit('boss', { active: true, ratio: Math.max(0, c.hp / this.cfg.bossHp), name: this.cfg.bossName });
-      this.addScore(60);
-      if (c.hp <= 0) this.defeatBoss(c);
-      else if (Math.random() < 0.5) this.speak(c, Phaser.Utils.Array.GetRandom(BOSS_LINES), '#ff8a3a', -64);
-    }
-
-    defeatBoss(c) {
-      this.koSprite(c);
-      this.boss = null;
-      this.addScore(1000);
-      UKP.bus.emit('boss', { active: false });
-      this.gameEnded = true;
-      this.spawnTimer.remove();
-      this.lineTimer.remove();
-
-      if (this.stageIndex + 1 < STAGES.length) {
-        UKP.sfx.clear();
-        UKP.bus.emit('message', { text: 'STAGE CLEAR!', sub: 'TAP TO CONTINUE', persist: true });
-        this.endHandoff(() => this.scene.restart({ stage: this.stageIndex + 1, score: this.score, lives: this.lives }));
-      } else {
-        UKP.sfx.clear();
-        UKP.bus.emit('message', { text: 'NO NONSENSE!', sub: 'YOU WIN — TAP TO PLAY AGAIN', persist: true });
-        this.endHandoff(() => this.scene.start('Boot'));
-      }
-    }
-
-    koCop(c) {
-      this.koSprite(c);
-      this.defeated += 1;
-      this.addScore(150);
-      UKP.sfx.hit();
-      if (Math.random() < 0.6) this.speak(c, Phaser.Utils.Array.GetRandom(COP_DOWN), '#ffffff', -50);
-    }
-
-    koSprite(c) {
-      c.ko = true;
-      c.body.setVelocity(this.facing * 60, -200);
-      c.body.setAllowGravity(true);
-      c.setAngularVelocity(this.facing * 300);
-      this.tweens.add({ targets: c, alpha: 0, delay: 500, duration: 500, onComplete: () => c.destroy() });
-    }
-
-    copChatter() {
-      const list = this.cops.getChildren().filter(c => c.active && !c.ko && !c.isBoss);
-      if (!list.length) return;
-      const c = Phaser.Utils.Array.GetRandom(list);
-      this.speak(c, Phaser.Utils.Array.GetRandom(COP_LINES), '#cfe3ff', -50);
-    }
-
-    speak(sprite, text, color, dy) {
-      const bub = this.add.text(sprite.x, sprite.y + (dy || -50), text, {
-        fontFamily: FONT, fontSize: '6px', color: color || '#ffffff', align: 'center',
-        backgroundColor: '#00000088', padding: { x: 3, y: 2 }, stroke: '#000000', strokeThickness: 2,
-        wordWrap: { width: 120 },
-      }).setOrigin(0.5, 1).setDepth(40);
-      this.tweens.add({ targets: bub, y: bub.y - 6, alpha: 0, delay: 1100, duration: 600, onComplete: () => bub.destroy() });
-    }
-
-    // ---- player damage ----
-    hurtPlayer() {
-      if (this.invuln || this.gameEnded) return;
-      this.hearts -= 1;
-      UKP.bus.emit('hearts', this.hearts);
-      UKP.sfx.hurt();
-      this.player.body.setVelocity(-this.facing * 140, -160);
-      if (this.hearts <= 0) { this.loseLife(); return; }
-      this.invuln = true;
-      this.blink(900, () => { this.invuln = false; });
-    }
-
-    loseLife() {
-      this.lives -= 1;
-      UKP.bus.emit('lives', this.lives);
-      if (this.lives < 0) { this.gameOver(); return; }
-      this.hearts = 5;
-      UKP.bus.emit('hearts', this.hearts);
-      this.invuln = true;
-      this.blink(1400, () => { this.invuln = false; });
-    }
-
-    gameOver() {
-      this.gameEnded = true;
-      this.spawnTimer.remove();
-      this.lineTimer.remove();
-      this.player.setTint(0x888888);
-      UKP.sfx.over();
-      UKP.bus.emit('message', { text: 'NICKED!', sub: 'GAME OVER — TAP TO RETRY', persist: true });
-      this.endHandoff(() => this.scene.start('Boot'));
-    }
-
-    endHandoff(fn) {
-      this.time.delayedCall(900, () => {
-        this.input.keyboard.once('keydown-ENTER', fn);
-        this.input.keyboard.once('keydown-SPACE', fn);
-        this.input.once('pointerdown', fn);
-      });
-    }
-
-    blink(ms, done) {
-      const tw = this.tweens.add({ targets: this.player, alpha: 0.25, yoyo: true, repeat: -1, duration: 90 });
-      this.time.delayedCall(ms, () => { tw.stop(); this.player.setAlpha(1); done && done(); });
-    }
-
-    addScore(n) { this.score += n; UKP.bus.emit('score', this.score); }
-
-    setPlayerTexture(key) {
-      if (this.player.anims.isPlaying) this.player.anims.stop();
-      this.player.setTexture(key);
-    }
-
-    // ---- main loop ----
-    update(time, delta) {
-      const p = this.player;
-      if (this.gameEnded) {
-        if (Phaser.Input.Keyboard.JustDown(this.keys.r)) this.scene.start('Boot');
-        return;
-      }
-
-      const left = this.cursors.left.isDown || this.keys.a.isDown;
-      const right = this.cursors.right.isDown || this.keys.d.isDown;
-      const up = this.cursors.up.isDown || this.keys.w.isDown;
-      const onGround = p.body.blocked.down || p.body.touching.down;
-      const SPEED = 130;
-
-      let vx = 0;
-      if (left) { vx = -SPEED; this.facing = -1; }
-      else if (right) { vx = SPEED; this.facing = 1; }
-      p.body.setVelocityX(vx);
-      p.setFlipX(this.facing === -1);
-
-      if (up && onGround) { p.body.setVelocityY(-330); UKP.sfx.jump(); }
-
-      // animation (don't override a brief throw pose)
-      if (time >= this.actionLock) {
-        if (!onGround) this.setPlayerTexture('man_idle');
-        else if (vx !== 0) { if (p.anims.getName() !== 'man_walk') p.anims.play('man_walk', true); }
-        else this.setPlayerTexture('man_idle');
-      }
-
-      // carried bin follows hands
-      if (this.carrying) {
-        this.carrying.x = p.x + this.facing * 2;
-        this.carrying.y = p.y - 40;
-        this.carrying.setFlipX(this.facing === -1);
-      }
-
-      // cops chase + attack
-      this.cops.getChildren().forEach(c => {
-        if (!c.active) return;
-        if (c.ko) { return; }
-        const dx = p.x - c.x;
-        const dir = dx < 0 ? -1 : 1;
-        const range = c.isBoss ? 26 : 20;
-        if (Math.abs(dx) > range) {
-          c.body.setVelocityX(dir * c.speed);
-          c.setFlipX(dir === 1);
-          if (c.anims.getName() !== 'cop_walk') c.anims.play('cop_walk', true);
-        } else {
-          c.body.setVelocityX(0);
-          c.anims.stop();
-          c.setFlipX(dir === 1);
-          if (time > c.nextPunch && Math.abs(p.y - c.y) < 34) {
-            c.setTexture('cop_punch');
-            this.time.delayedCall(160, () => { c.active && !c.ko && c.setTexture('cop_idle'); });
-            c.nextPunch = time + (c.isBoss ? 900 : 1200);
-            this.hurtPlayer();
-          } else if (c.anims.getName() !== 'cop_walk') {
-            c.setTexture('cop_punch'); // hold a ready pose at range 0
-          }
-        }
-        if (time > c.nextLine && !c.isBoss) {
-          c.nextLine = time + Phaser.Math.Between(4000, 8000);
-          if (Math.random() < 0.5) this.speak(c, Phaser.Utils.Array.GetRandom(COP_LINES), '#cfe3ff', -50);
-        }
-      });
-
-      // tidy projectiles that fly offscreen below
-      this.projectiles.getChildren().forEach(b => {
-        if (b.active && b.y > H + 40) b.destroy();
-      });
-    }
-  }
-
-  // ---------------------------------------------------------------------- boot
-  function boot() {
-    const config = {
-      type: Phaser.AUTO,
-      parent: 'game',
-      width: W,
-      height: H,
-      pixelArt: true,
-      roundPixels: true,
-      backgroundColor: '#3f9fe6',
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-      physics: { default: 'arcade', arcade: { gravity: { y: 900 }, debug: false } },
-      scene: [BootScene, GameScene, UKP.UIScene],
+  function spawnCop(boss) {
+    const c = {
+      x: UKP.clamp(G.scrollX + VW + 30, 20, G.worldW - 20), y: GROUND_Y,
+      vx: 0, vy: 0, facing: -1, ko: false, isBoss: !!boss, scale: boss ? 1.5 : 1,
+      hp: boss ? G.cfg.bossHp : 1, speed: boss ? G.cfg.copSpeed * 0.7 : G.cfg.copSpeed + UKP.randInt(-6, 10),
+      nextPunch: 0, nextLine: G.t + UKP.rand(1.5, 4), flash: 0, walkT: 0, walkF: 0, punch: 0, tex: 'cop_idle', koT: 0, rot: 0,
     };
-    UKP.game = new Phaser.Game(config);
+    G.cops.push(c);
+    return c;
   }
 
-  if (document.readyState === 'complete') boot();
-  else window.addEventListener('load', boot);
+  function startBoss() {
+    G.bossActive = true;
+    G.boss = spawnCop(true);
+    sfx().siren && sfx().siren();
+    setMessage('VILLAIN!', G.cfg.bossName, 1.6);
+    bubble(G.boss.x, G.boss.y - 60, UKP.choice(BOSS_LINES), '#ff8a3a');
+  }
+
+  function updateCops(dt) {
+    const p = G.player;
+    for (const c of G.cops) {
+      if (c.flash > 0) c.flash -= dt;
+      if (c.ko) {
+        c.vy += GRAV * dt; c.x += c.vx * dt; c.y += c.vy * dt; c.rot += dt * 8 * (c.vx < 0 ? -1 : 1);
+        c.koT -= dt;
+        continue;
+      }
+      const dx = p.x - c.x;
+      const dir = dx < 0 ? -1 : 1;
+      c.facing = dir;
+      const range = c.isBoss ? 26 : 20;
+      if (Math.abs(dx) > range) {
+        c.vx = dir * c.speed; c.x += c.vx * dt;
+        c.walkT += dt; if (c.walkT > 0.14) { c.walkT = 0; c.walkF ^= 1; }
+        c.tex = c.walkF ? 'cop_walk1' : 'cop_walk2';
+      } else {
+        c.vx = 0;
+        if (G.t > c.nextPunch && Math.abs(p.y - c.y) < 34) {
+          c.punch = 0.18; c.nextPunch = G.t + (c.isBoss ? 0.9 : 1.2); hurtPlayer();
+        }
+        if (c.punch > 0) { c.punch -= dt; c.tex = 'cop_punch'; } else c.tex = 'cop_idle';
+      }
+      if (!c.isBoss && G.t > c.nextLine) { c.nextLine = G.t + UKP.rand(4, 8); if (Math.random() < 0.5) bubble(c.x, c.y - 50, UKP.choice(COP_LINES), '#cfe3ff'); }
+    }
+    G.cops = G.cops.filter(c => !(c.ko && c.koT <= 0));
+  }
+
+  function copChatter() {
+    const list = G.cops.filter(c => !c.ko && !c.isBoss);
+    if (!list.length) return;
+    const c = UKP.choice(list);
+    bubble(c.x, c.y - 50, UKP.choice(COP_LINES), '#cfe3ff');
+  }
+
+  function koCop(c) { koSprite(c); G.defeated++; G.score += 150; sfx().hit && sfx().hit(); if (Math.random() < 0.6) bubble(c.x, c.y - 50, UKP.choice(COP_DOWN), '#ffffff'); }
+  function koSprite(c) { c.ko = true; c.vy = -200; c.vx = G.player.facing * 60; c.koT = 1.0; }
+
+  function hitBoss(dmg) {
+    const c = G.boss; if (!c) return;
+    c.hp -= dmg; c.flash = 0.12; c.x += G.player.facing * 6; sfx().bossHit && sfx().bossHit(); G.score += 60;
+    if (c.hp <= 0) defeatBoss();
+    else if (Math.random() < 0.5) bubble(c.x, c.y - 60, UKP.choice(BOSS_LINES), '#ff8a3a');
+  }
+  function defeatBoss() {
+    koSprite(G.boss); G.boss = null; G.bossActive = false; G.score += 1000;
+    sfx().clear && sfx().clear();
+    if (G.stageIndex + 1 < STAGES.length) { G.state = 'clear'; setMessage('STAGE CLEAR!', 'PRESS ENTER'); }
+    else { G.state = 'win'; setMessage('NO NONSENSE!', 'YOU WIN - PRESS ENTER'); }
+  }
+
+  function hurtPlayer() {
+    const p = G.player;
+    if (p.invuln > 0) return;
+    p.hearts -= 1; sfx().hurt && sfx().hurt();
+    p.vx = -p.facing * 120; p.vy = -150; p.onGround = false;
+    if (p.hearts <= 0) { loseLife(); return; }
+    p.invuln = 0.9;
+  }
+  function loseLife() {
+    G.lives -= 1;
+    if (G.lives < 0) { G.state = 'over'; setMessage('NICKED!', 'GAME OVER - PRESS ENTER'); sfx().over && sfx().over(); return; }
+    G.player.hearts = 5; G.player.invuln = 1.4;
+  }
+
+  // ---------------- render ----------------
+  function spr(ctx, img, worldX, feetY, facing, scale, alpha, rot) {
+    if (!img) return;
+    scale = scale || 1;
+    const w = img.width * scale, h = img.height * scale;
+    const sx = Math.round(worldX - G.scrollX - w / 2), sy = Math.round(feetY - h);
+    ctx.save();
+    if (alpha != null) ctx.globalAlpha = alpha;
+    if (rot) { ctx.translate(sx + w / 2, sy + h / 2); ctx.rotate(rot); ctx.translate(-w / 2, -h / 2); if (facing < 0) { ctx.translate(w, 0); ctx.scale(-1, 1); } ctx.drawImage(img, 0, 0, w, h); }
+    else if (facing < 0) { ctx.translate(sx + w, sy); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0, w, h); }
+    else ctx.drawImage(img, sx, sy, w, h);
+    ctx.restore();
+  }
+
+  function render(ctx) {
+    const SP = UKP.SP;
+    if (G.state === 'title') { renderTitle(ctx); return; }
+
+    ctx.drawImage(SP.sky, 0, 0);
+    // clouds (slow parallax)
+    const cs = G.scrollX * 0.18;
+    for (let i = 0; i < 6; i++) {
+      ctx.drawImage(SP.cloud, Math.round(i * 150 - (cs % 150)), 56 + (i % 2) * 20);
+    }
+    // skyline
+    const sk = G.scrollX * 0.4;
+    for (let x = -((sk % 230) + 230) % 230; x < VW + 10; x += 230) ctx.drawImage(SP.skyline, Math.round(x), GROUND_Y - 96);
+    // houses / wall / pavement (scroll 1)
+    tile(ctx, SP.houses, 120, 110);
+    tile(ctx, SP.wall, 40, 212);
+    tile(ctx, SP.pave, 40, 246);
+    ctx.fillStyle = UKP.C.ROAD; ctx.fillRect(0, 268, VW, VH - 268);
+    // back props
+    for (const pr of G.props.back) spr(ctx, SP[pr.img], pr.x, pr.y, 1, 1);
+    // bins
+    for (const b of G.bins) spr(ctx, SP[b.key], b.x, b.y, 1, 1);
+    // cops
+    for (const c of G.cops) {
+      const a = c.ko ? Math.max(0, c.koT) : 1;
+      spr(ctx, SP[c.tex], c.x, c.y, c.facing, c.scale, a, c.ko ? c.rot : 0);
+      if (c.flash > 0) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; spr(ctx, SP[c.tex], c.x, c.y, c.facing, c.scale, 0.5, 0); ctx.restore(); }
+    }
+    // projectiles
+    for (const b of G.projectiles) spr(ctx, SP[b.key], b.x, b.y, 1, 1, 1, b.rot);
+    // player
+    const p = G.player;
+    const pa = (p.invuln > 0 && Math.floor(p.invuln * 12) % 2) ? 0.3 : 1;
+    if (p.carrying) spr(ctx, SP[p.carrying], p.x + p.facing * 2, p.y - 36, p.facing, 1, pa);
+    spr(ctx, SP[p.tex], p.x, p.y, p.facing, 1, pa);
+    // front props
+    for (const pr of G.props.front) spr(ctx, SP[pr.img], pr.x, pr.y, 1, 1);
+    // bubbles
+    for (const b of G.bubbles) drawBubble(ctx, b);
+
+    drawHUD(ctx);
+    if (G.msg) drawMessage(ctx);
+  }
+
+  function tile(ctx, img, w, y) {
+    const start = Math.floor(G.scrollX / w) * w;
+    for (let wx = start; wx < G.scrollX + VW; wx += w) ctx.drawImage(img, Math.round(wx - G.scrollX), y);
+  }
+
+  function drawBubble(ctx, b) {
+    const sx = Math.round(b.x - G.scrollX), w = UKP.textWidth(b.text, 1) + 6;
+    const al = UKP.clamp(b.life / 0.5, 0, 1);
+    ctx.save(); ctx.globalAlpha = al;
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(Math.round(sx - w / 2), Math.round(b.y - 9), w, 11);
+    UKP.drawTextCentered(ctx, b.text, sx, Math.round(b.y - 7), 1, '#ffffff');
+    ctx.restore();
+  }
+
+  function drawHUD(ctx) {
+    const SP = UKP.SP;
+    ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, VW, HUD_H);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fillRect(0, HUD_H - 1, VW, 1);
+    // left
+    ctx.fillStyle = '#222a3a'; ctx.fillRect(6, 6, 30, 30);
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.strokeRect(6.5, 6.5, 29, 29);
+    ctx.drawImage(SP.portrait_man, 7, 7);
+    UKP.drawText(ctx, 'BRITISH MAN', 42, 6, 1, '#ffffff');
+    for (let i = 0; i < 5; i++) ctx.drawImage(i < G.player.hearts ? SP.heart : SP.heart_empty, 44 + i * 12, 18);
+    UKP.drawText(ctx, 'SCORE ' + String(G.score).padStart(6, '0'), 42, 33, 1, '#ffd23a');
+    // middle
+    UKP.drawText(ctx, 'X ' + String(Math.max(0, G.lives)).padStart(2, '0'), 196, 14, 1, '#ffffff');
+    ctx.drawImage(SP.flag, 230, 12);
+    // right
+    UKP.drawText(ctx, 'POLICE OFFICER', VW - 152, 6, 1, '#ff8a3a');
+    UKP.drawText(ctx, 'VILLAIN', VW - 152, 17, 1, '#ff8a3a');
+    ctx.fillStyle = '#222a3a'; ctx.fillRect(VW - 36, 6, 30, 30);
+    ctx.strokeRect(VW - 35.5, 6.5, 29, 29);
+    ctx.drawImage(SP.portrait_cop, VW - 35, 7);
+    // boss bar
+    const bx = VW - 152, by = 30, bw = 110;
+    ctx.fillStyle = G.bossActive ? '#3a1414' : '#1a1f2a'; ctx.fillRect(bx, by, bw, 8);
+    if (G.bossActive && G.boss) { ctx.fillStyle = '#e2502a'; ctx.fillRect(bx + 1, by + 1, Math.round((bw - 2) * Math.max(0, G.boss.hp / G.cfg.bossHp)), 6); }
+    UKP.drawText(ctx, G.bossActive ? G.cfg.bossName : 'ON PATROL', bx, by, 1, '#ffd2c2');
+  }
+
+  function drawMessage(ctx) {
+    UKP.drawTextCentered(ctx, G.msg, VW / 2, 116, 3, '#ffffff');
+    if (G.msgSub) UKP.drawTextCentered(ctx, G.msgSub, VW / 2, 150, 1, '#ffd23a');
+  }
+
+  function renderTitle(ctx) {
+    const SP = UKP.SP;
+    ctx.drawImage(SP.sky, 0, 0);
+    for (let x = 0; x < VW; x += 230) ctx.drawImage(SP.skyline, x, GROUND_Y - 96);
+    ctx.drawImage(SP.cloud, 60, 36); ctx.drawImage(SP.cloud, 330, 60);
+    for (let x = 0; x < VW; x += 40) ctx.drawImage(SP.pave, x, 246);
+    ctx.fillStyle = UKP.C.ROAD; ctx.fillRect(0, 268, VW, VH - 268);
+    const bob = Math.sin(G.t * 4) * 3;
+    spr2(ctx, SP.man_idle, 120, 248 + bob, 1, 1.6);
+    spr2(ctx, SP.bin_blue, 240, 210, 1, 1.4);
+    spr2(ctx, SP.cop_idle, 360, 248 - bob, -1, 1.6);
+    UKP.drawTextCentered(ctx, 'UK POLICE', VW / 2, 52, 4, '#ffffff');
+    UKP.drawTextCentered(ctx, 'NO NONSENSE', VW / 2, 92, 2, '#ffd23a');
+    if (Math.floor(G.t * 2) % 2 === 0) UKP.drawTextCentered(ctx, 'PRESS ENTER OR CLICK', VW / 2, 150, 1, '#ffffff');
+    UKP.drawTextCentered(ctx, 'MOVE  ARROWS    JUMP  UP    BIN/BASH  SPACE', VW / 2, 175, 1, '#dfe6ee');
+  }
+  // simple non-camera sprite blit for the title screen
+  function spr2(ctx, img, x, feetY, facing, scale) {
+    const w = img.width * scale, h = img.height * scale;
+    const dx = Math.round(x - w / 2), dy = Math.round(feetY - h);
+    ctx.save();
+    if (facing < 0) { ctx.translate(dx + w, dy); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0, w, h); }
+    else ctx.drawImage(img, dx, dy, w, h);
+    ctx.restore();
+  }
+
+  // ---------------- boot ----------------
+  UKP.start = function () {
+    UKP.initCanvas('game');
+    UKP.buildSprites(VW, VH);
+    clearMessage();
+    if (window.location.hash === '#play') startGame(); else G.state = 'title';
+    UKP.run(update, render);
+  };
+
+  if (document.readyState === 'complete' || document.readyState === 'interactive') UKP.start();
+  else window.addEventListener('DOMContentLoaded', UKP.start);
 })(window.UKP);

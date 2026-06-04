@@ -1,3 +1,6 @@
-_smoke_*.png
+_*.png
+_t.html
+_debug*.html
+_proof.html
 .DS_Store
 node_modules/

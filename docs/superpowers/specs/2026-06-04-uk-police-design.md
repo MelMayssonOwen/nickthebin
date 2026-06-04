@@ -1,7 +1,9 @@
 # UK POLICE — No Nonsense — Design
 
 **Date:** 2026-06-04
-**Status:** Built — playable prototype.
+**Status:** Built — playable prototype. **Rewritten from Phaser to a dependency-free
+vanilla Canvas engine** after Phaser's scene/focus/visibility handling froze the
+loop in real browsers right after gameplay started (the game logic itself was fine).
 
 ## Purpose
 
@@ -17,8 +19,10 @@ This is comedy fiction: cartoon ragdoll officers, no blood, no real individuals.
 
 - **Output:** a playable web prototype (not a design doc only).
 - **Game loop:** side-scrolling beat-'em-up **+** level-based stages (combined).
-- **Tech:** **Phaser 3** (HTML5), loaded from CDN, no build step. All art and
-  audio generated in code so it runs as a static site.
+- **Tech:** originally Phaser 3; **now a zero-dependency vanilla HTML5 Canvas
+  engine** (own fixed-timestep loop, own input, bitmap font, pre-rendered pixel
+  sprites). No CDN, no build step, runs by opening index.html. Chosen for
+  reliability after Phaser's framework behaviour caused real-browser freezes.
 - **Look:** must resemble the reference — 8-bit pixel art, brown terraced houses,
   hazy Big Ben / Parliament skyline, blue/brown/grey wheelie bins, custodian-
   helmet bobbies, a parked POLICE car, and a hearts + score + VILLAIN HUD.
@@ -79,8 +83,10 @@ This is comedy fiction: cartoon ragdoll officers, no blood, no real individuals.
 - All scripts syntax-checked.
 - Headless Chrome screenshots confirm the title screen and Stage 1 render
   correctly (HUD, characters, scenery match the reference).
-- Not verified headlessly: live input/combat (movement, throwing, officer AI) —
-  these were reviewed in code but need a real browser to play-test.
+- **Movement proven** by injecting a synthetic `ArrowRight` keydown in a headless
+  run and reading `UKP.G.player.x` before/after: 80.0 → moved right. Input drives
+  movement (this was the exact symptom that failed under Phaser).
+- Still best confirmed by a real play-through for feel (hit ranges, difficulty).
 
 ## Possible follow-ups (out of scope for the prototype)
 
