@@ -14,8 +14,11 @@ COPY entrypoint.sh /entrypoint.sh
 ARG STATS_USER=admin
 ARG STATS_PASS=binstats2026
 RUN chmod +x /entrypoint.sh \
- && mkdir -p /usr/share/nginx/html/stats \
+ && mkdir -p /usr/share/nginx/html/stats /data \
  && htpasswd -bc /etc/nginx/.htpasswd "$STATS_USER" "$STATS_PASS"
+
+# persistent storage for the access log (Coolify keeps this across redeploys)
+VOLUME /data
 
 EXPOSE 80 3000
 CMD ["/entrypoint.sh"]
