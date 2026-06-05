@@ -121,13 +121,18 @@ window.UKP = window.UKP || {};
       pc.tex = (Math.floor(G.t * 10) % 2) ? 'man_walk1' : 'man_walk2';
       G.scrollX = UKP.clamp(pc.x - 160, 0, Math.max(0, G.worldW - VW));
       for (const c of G.cops) {
-        if (!c.ko && c.x > pc.x - 30 && c.x < pc.x + 74) { // plough the line — they scatter like bowling pins
+        if (!c.ko && c.x > pc.x - 40 && c.x < pc.x + 80) { // plough the line — they scatter like bowling pins
           c.hp = 1; koCop(c);
-          c.vy = -420 - Math.random() * 220; c.vx = 160 + Math.random() * 220;
-          c.spin = 16 + Math.random() * 18; c.koT = 1.9;
+          c.vy = -480 - Math.random() * 260; c.vx = 200 + Math.random() * 260;
+          c.spin = 20 + Math.random() * 22; c.koT = 2.6;
           sfx().smash && sfx().smash();
         }
       }
+      // keep the launched coppers flying (updateCops is skipped while charging)
+      for (const c of G.cops) {
+        if (c.ko) { c.vy += GRAV * dt; c.x += c.vx * dt; c.y += c.vy * dt; c.rot += dt * (c.spin || 8) * (c.vx < 0 ? -1 : 1); c.koT -= dt; }
+      }
+      G.cops = G.cops.filter(c => !(c.ko && c.koT <= 0));
       if (pc.x >= G.worldW - 22) { G.stageIndex++; startStage(); }
       return;
     }
@@ -270,7 +275,7 @@ window.UKP = window.UKP || {};
         if (G.cfg.chargeEnd) {
           if (!G.bigBin) {
             // the big bin appears just ahead of you, with a long runway into a wall of riot police
-            G.bigBin = { x: Math.max(G.player.x + 90, Math.min(G.player.x + 200, G.worldW - 620)) };
+            G.bigBin = { x: Math.max(G.player.x + 90, Math.min(G.player.x + 200, G.worldW - 760)) };
             spawnBarrage();
             setMessage('GRAB THE BIG BIN!', 'SHOVE THE LINE — PRESS SPACE', 2.4);
           }
@@ -303,12 +308,13 @@ window.UKP = window.UKP || {};
 
   // a wall of riot police across the end of the road for the big-bin charge to smash
   function spawnBarrage() {
-    const n = 9;
+    // a riot wall spread across the middle of the runway, so you SEE them scatter
+    const n = 10;
     for (let i = 0; i < n; i++) {
       const c = spawnCop(false);
-      c.x = G.worldW - 280 + i * 26;
+      c.x = G.worldW - 600 + i * 30;
       c.barrage = true; c.speed = 0; c.nextPunch = 1e30; c.nextLine = 1e30;
-      c.kind = 'copshield'; c.hp = 1; c.tex = 'copshield_idle'; // a riot wall
+      c.kind = 'copshield'; c.hp = 1; c.tex = 'copshield_idle';
     }
   }
 

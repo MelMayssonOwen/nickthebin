@@ -53,7 +53,8 @@ window.UKP = window.UKP || {};
     ctx.imageSmoothingEnabled = false;
     UKP.ctx = ctx;
 
-    canvas.addEventListener('pointerdown', () => { onFirstGesture(); window.focus(); });
+    // tapping the canvas advances menus (title/win/over) and unlocks audio
+    canvas.addEventListener('pointerdown', () => { onFirstGesture(); try { window.focus(); } catch (e) { /* ignore */ } pressedThisFrame['Enter'] = true; });
 
     function fit() {
       // fractional scale to fill the window (pixelated rendering keeps it crisp)
@@ -62,10 +63,54 @@ window.UKP = window.UKP || {};
       canvas.style.height = Math.round(VH * scale) + 'px';
     }
     window.addEventListener('resize', fit);
+    window.addEventListener('orientationchange', fit);
     fit();
+    setupTouch();
     try { window.focus(); } catch (e) { /* ignore */ }
     return ctx;
   };
+
+  // ---- on-screen touch controls (touch devices only; desktop is untouched) ----
+  function setupTouch() {
+    const coarse = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window);
+    if (!coarse) return;
+    document.documentElement.style.touchAction = 'none';
+
+    const style = document.createElement('style');
+    style.textContent =
+      '#ctrl{position:fixed;inset:0;pointer-events:none;z-index:50;font-family:monospace;user-select:none;-webkit-user-select:none;}' +
+      '.btn{position:fixed;bottom:18px;pointer-events:auto;display:flex;align-items:center;justify-content:center;' +
+      'background:rgba(18,20,28,0.42);color:#fff;border:2px solid rgba(255,255,255,0.55);border-radius:16px;' +
+      'font-weight:bold;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;}' +
+      '.btn:active{background:rgba(255,255,255,0.35);}' +
+      '#bL{left:16px;width:66px;height:66px;font-size:30px;}' +
+      '#bR{left:90px;width:66px;height:66px;font-size:30px;}' +
+      '#bJ{right:104px;width:74px;height:74px;font-size:15px;}' +
+      '#bA{right:16px;width:84px;height:84px;font-size:15px;background:rgba(36,86,42,0.5);}' +
+      '#rot{position:fixed;top:6px;left:0;right:0;text-align:center;color:#fff;font-family:monospace;font-size:12px;' +
+      'pointer-events:none;z-index:60;text-shadow:0 1px 2px #000;display:none;}' +
+      '@media (orientation:portrait){#rot{display:block;}}';
+    document.head.appendChild(style);
+
+    const wrap = document.createElement('div'); wrap.id = 'ctrl';
+    function mk(id, label, code) {
+      const b = document.createElement('div'); b.id = id; b.className = 'btn'; b.textContent = label;
+      const on = (e) => { e.preventDefault(); e.stopPropagation(); if (!held[code]) pressedThisFrame[code] = true; held[code] = true; onFirstGesture(); };
+      const off = (e) => { e.preventDefault(); e.stopPropagation(); held[code] = false; };
+      b.addEventListener('touchstart', on, { passive: false });
+      b.addEventListener('touchend', off, { passive: false });
+      b.addEventListener('touchcancel', off, { passive: false });
+      b.addEventListener('mousedown', on); b.addEventListener('mouseup', off); b.addEventListener('mouseleave', off);
+      wrap.appendChild(b);
+    }
+    mk('bL', '◀', 'ArrowLeft');
+    mk('bR', '▶', 'ArrowRight');
+    mk('bJ', 'JUMP', 'ArrowUp');
+    mk('bA', 'BIN', 'Space');
+    const rot = document.createElement('div'); rot.id = 'rot'; rot.textContent = '↻ ROTATE TO LANDSCAPE FOR BEST PLAY';
+    wrap.appendChild(rot);
+    document.body.appendChild(wrap);
+  }
 
   // ---- fixed-timestep loop ----
   UKP.run = function (update, render) {
