@@ -68,25 +68,26 @@ window.UKP = window.UKP || {};
     return (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window);
   }
 
-  // Desktop / landscape: fit & centre (unchanged). Mobile portrait: game across the
-  // top (full width), with the controls laid out in the area below it.
+  // Desktop / landscape: 480x270 fitted & centred (unchanged). Mobile portrait:
+  // render at a portrait view width so the game fills the screen edge-to-edge.
   function layout() {
     if (!canvas) return;
     const w = window.innerWidth, h = window.innerHeight;
-    if (isCoarse() && h > w) {
-      const gh = Math.round(w * VH / VW);
+    const portrait = isCoarse() && h > w;
+    const vw = portrait ? Math.max(120, Math.round(VH * w / h)) : 480;
+    if (canvas.width !== vw) canvas.width = vw;
+    if (canvas.height !== VH) canvas.height = VH;
+    ctx.imageSmoothingEnabled = false;
+    if (UKP.setWidth) UKP.setWidth(vw);
+    if (portrait) {
       canvas.style.width = w + 'px';
-      canvas.style.height = gh + 'px';
-      document.documentElement.style.setProperty('--gameH', gh + 'px');
-      document.body.style.alignItems = 'flex-start';
-      document.body.classList.add('portrait');
+      canvas.style.height = h + 'px';     // fill the whole screen
     } else {
-      const scale = Math.max(1, Math.min(w / VW, h / VH));
-      canvas.style.width = Math.round(VW * scale) + 'px';
+      const scale = Math.max(1, Math.min(w / vw, h / VH));
+      canvas.style.width = Math.round(vw * scale) + 'px';
       canvas.style.height = Math.round(VH * scale) + 'px';
-      document.body.style.alignItems = 'center';
-      document.body.classList.remove('portrait');
     }
+    document.body.style.alignItems = 'center';
   }
 
   // ---- on-screen touch controls (touch devices only; desktop is untouched) ----
@@ -97,19 +98,13 @@ window.UKP = window.UKP || {};
     const style = document.createElement('style');
     style.textContent =
       '#ctrl{position:fixed;inset:0;pointer-events:none;z-index:50;font-family:monospace;user-select:none;-webkit-user-select:none;}' +
-      '.grp{position:fixed;pointer-events:auto;display:flex;gap:12px;align-items:center;}' +
-      '#gL{left:16px;bottom:18px;}#gR{right:16px;bottom:18px;}' +
-      '.btn{display:flex;align-items:center;justify-content:center;width:66px;height:66px;font-size:28px;' +
-      'background:rgba(18,20,28,0.42);color:#fff;border:2px solid rgba(255,255,255,0.55);border-radius:16px;' +
+      '.grp{position:fixed;bottom:4%;pointer-events:auto;display:flex;gap:14px;align-items:center;}' +
+      '#gL{left:5%;}#gR{right:5%;}' +
+      '.btn{display:flex;align-items:center;justify-content:center;width:68px;height:68px;font-size:30px;' +
+      'background:rgba(18,20,28,0.4);color:#fff;border:2px solid rgba(255,255,255,0.6);border-radius:16px;' +
       'font-weight:bold;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;}' +
-      '.btn:active{background:rgba(255,255,255,0.4);}' +
-      '#bJ{font-size:15px;}#bA{width:80px;height:80px;font-size:15px;background:rgba(36,86,42,0.5);}' +
-      // portrait: controls sit in the panel below the game, anchored low for thumbs
-      'body.portrait #ctrl{position:fixed;left:0;right:0;top:var(--gameH,56vw);bottom:0;display:flex;' +
-      'align-items:flex-end;justify-content:space-between;padding:0 3vw 8vh;box-sizing:border-box;}' +
-      'body.portrait .grp{position:static;gap:10px;}' +
-      'body.portrait .btn{width:64px;height:64px;font-size:30px;}' +
-      'body.portrait #bJ{font-size:16px;}body.portrait #bA{width:80px;height:80px;font-size:16px;}';
+      '.btn:active{background:rgba(255,255,255,0.45);}' +
+      '#bJ{font-size:16px;}#bA{width:82px;height:82px;font-size:16px;background:rgba(36,86,42,0.5);}';
     document.head.appendChild(style);
 
     const wrap = document.createElement('div'); wrap.id = 'ctrl';

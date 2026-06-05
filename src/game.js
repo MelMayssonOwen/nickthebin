@@ -3,8 +3,15 @@
  * pixel sprites + bitmap font. See README. */
 window.UKP = window.UKP || {};
 (function (UKP) {
-  const VW = 480, VH = 270, HUD_H = 46, GROUND_Y = 246;
+  let VW = 480;                         // view width (narrower on mobile portrait)
+  const VH = 270, HUD_H = 46, GROUND_Y = 246;
   const GRAV = 900, SPEED = 130, JUMP = -330;
+  UKP.setWidth = function (w) { VW = Math.max(120, Math.round(w)); UKP.VW = VW; };
+  function fillSky(ctx) { // gradient that fills any view width
+    const g = ctx.createLinearGradient(0, 0, 0, VH);
+    g.addColorStop(0, '#3f9fe6'); g.addColorStop(0.62, '#8fcdf0'); g.addColorStop(1, '#cfeafa');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+  }
 
   // cops heckle as they approach
   const COP_LINES = [
@@ -21,14 +28,21 @@ window.UKP = window.UKP || {};
   const HERO_LINES = ["I DON'T THINK SO, MATE.", "DON'T THINK YOU 'AVE, MATE.", "NOT TODAY, OFFICER."];
   const BOSS_LINES = ["YOU'RE GOING DAHN THE NICK.", "I AM THE LAW.", "NICE TRY, SUNSHINE."];
   const BOSS_HIT = ["HOW DARE YOU!", "THIS IS AN OUTRAGE!", "MY OFFICE WILL HEAR OF THIS!", "STEADY ON!"];
+  // PM Starmer says Starmer things
+  const STARMER_LINES = ["I AM A SERIOUS MAN.", "MY FATHER WAS A TOOLMAKER.", "TWO TIERS FOR YOU.",
+    "ARREST THAT BIN!", "WE WILL TAKE BACK CONTROL OF THE BINS.", "BY ANY MEASURE, YOU'RE NICKED."];
+  const STARMER_HIT = ["THIS IS NOT VERY SERIOUS.", "I'LL HAVE YOUR BINS!", "STEADY ON, COMRADE!",
+    "P45 INCOMING!", "MY OFFICE WILL HEAR OF THIS!"];
+  const bossLines = () => (G.cfg && G.cfg.bossKind === 'starmer') ? STARMER_LINES : BOSS_LINES;
+  const bossHit = () => (G.cfg && G.cfg.bossKind === 'starmer') ? STARMER_HIT : BOSS_HIT;
 
   const STAGES = [
-    { name: 'BRICK LANE', worldW: 2200, target: 5, copSpeed: 34, copMax: 3, spawn: 1.8, bossHp: 5, bossName: 'SGT. NONSENSE', bossKind: 'chief', weapon: 'bin', sky: 'sky_generic', sign: ['NO', 'NONSENSE'], theme: { building: 'houses', wall: 'wall', ground: 'pave' } },
-    { name: '10 DOWNING STREET', worldW: 2400, target: 6, copSpeed: 38, copMax: 3, spawn: 1.6, bossHp: 8, bossName: 'PM STARMER', bossKind: 'starmer', weapon: 'bin', sky: 'sky_downing', sign: ['NO.', '10'], graffiti: 'TWO-TIER KEIR', theme: { building: 'bld_downing', wall: 'rail_iron', ground: 'pave_dark' } },
-    { name: 'BIN THERE, NICKED THAT', worldW: 2500, target: 7, copSpeed: 42, copMax: 4, spawn: 1.45, bossHp: 8, bossName: 'SGT. SKIP', bossKind: 'chief', weapon: 'bin', binScene: true, sky: 'sky_generic', sign: ['BIN', 'AMNESTY'], theme: { building: 'houses', wall: 'rail_iron', ground: 'pave' } },
-    { name: 'LONDON EYE', worldW: 2600, target: 8, copSpeed: 46, copMax: 4, spawn: 1.3, bossHp: 10, bossName: 'INSP. TRUNCHEON', bossKind: 'chief', weapon: 'brick', sky: 'sky_eye', sign: ['MIND', 'THE GAP'], theme: { building: 'bld_river', wall: 'rail_stone', ground: 'pave_stone' } },
-    { name: 'TOWER BRIDGE', worldW: 2800, target: 9, copSpeed: 50, copMax: 5, spawn: 1.2, bossHp: 11, bossName: 'SUPT. KIPPER', bossKind: 'chief', weapon: 'brick', chargeEnd: true, sky: 'sky_bridge', sign: ['KEEP', 'LEFT'], theme: { building: 'bld_bridge', wall: 'rail_blue', ground: 'road_deck' } },
-    { name: 'BIG BIN', worldW: 3200, target: 11, copSpeed: 56, copMax: 5, spawn: 1.05, bossHp: 14, bossName: 'CHIEF PLOD', bossKind: 'chief', weapon: 'brick', sky: 'sky_bigben', sign: ['BIG', 'BIN'], foreLandmark: 'bigben_tower', theme: { building: 'bld_parl', wall: 'rail_stone', ground: 'pave_stone' } },
+    { name: 'BRICK LANE', worldW: 2200, target: 6, copSpeed: 36, copMax: 4, spawn: 1.5, bossHp: 5, bossName: 'SGT. NONSENSE', bossKind: 'chief', weapon: 'bin', sky: 'sky_generic', sign: ['NO', 'NONSENSE'], theme: { building: 'houses', wall: 'wall', ground: 'pave' } },
+    { name: '10 DOWNING STREET', worldW: 2400, target: 7, copSpeed: 40, copMax: 4, spawn: 1.4, bossHp: 8, bossName: 'PM STARMER', bossKind: 'starmer', weapon: 'bin', sky: 'sky_downing', sign: ['NO.', '10'], graffiti: 'TWO-TIER KEIR', theme: { building: 'bld_downing', wall: 'rail_iron', ground: 'pave_dark' } },
+    { name: 'BIN THERE, NICKED THAT', worldW: 2500, target: 8, copSpeed: 44, copMax: 5, spawn: 1.3, bossHp: 8, bossName: 'SGT. SKIP', bossKind: 'chief', weapon: 'bin', binScene: true, sky: 'sky_generic', sign: ['BIN', 'AMNESTY'], theme: { building: 'houses', wall: 'rail_iron', ground: 'pave' } },
+    { name: 'LONDON EYE', worldW: 2600, target: 9, copSpeed: 48, copMax: 5, spawn: 1.2, bossHp: 10, bossName: 'INSP. TRUNCHEON', bossKind: 'chief', weapon: 'brick', sky: 'sky_eye', sign: ['MIND', 'THE GAP'], theme: { building: 'bld_river', wall: 'rail_stone', ground: 'pave_stone' } },
+    { name: 'TOWER BRIDGE', worldW: 2800, target: 10, copSpeed: 52, copMax: 6, spawn: 1.1, bossHp: 11, bossName: 'SUPT. KIPPER', bossKind: 'chief', weapon: 'brick', chargeEnd: true, sky: 'sky_bridge', sign: ['KEEP', 'LEFT'], theme: { building: 'bld_bridge', wall: 'rail_blue', ground: 'road_deck' } },
+    { name: 'BIG BIN', worldW: 3200, target: 12, copSpeed: 58, copMax: 6, spawn: 1.0, bossHp: 14, bossName: 'CHIEF PLOD', bossKind: 'chief', weapon: 'brick', sky: 'sky_bigben', sign: ['BIG', 'BIN'], foreLandmark: 'bigben_tower', theme: { building: 'bld_parl', wall: 'rail_stone', ground: 'pave_stone' } },
   ];
 
   const G = {
@@ -36,7 +50,8 @@ window.UKP = window.UKP || {};
     scrollX: 0, worldW: 2200, cfg: STAGES[0],
     player: null, cops: [], bins: [], projectiles: [], bubbles: [], props: { back: [], front: [] },
     defeated: 0, bossActive: false, boss: null, spawnT: 0, lineT: 0,
-    bigBin: null, charging: false, chargeT: 0, hearts: [],
+    bigBin: null, charging: false, chargeT: 0, hearts: [], carryHearts: 5,
+    everPicked: false, everThrew: false, everStomped: false, binMsgShown: false,
     msg: null, msgSub: '', msgT: 0, msgPersist: false,
   };
   UKP.G = G;
@@ -54,20 +69,24 @@ window.UKP = window.UKP || {};
 
   // ---------------- lifecycle ----------------
   function startGame() {
-    G.stageIndex = 0; G.score = 0;
+    G.stageIndex = 0; G.score = 0; G.carryHearts = 5;
+    G.everPicked = false; G.everThrew = false; G.everStomped = false;
     startStage();
   }
   function startStage() {
     const cfg = STAGES[G.stageIndex];
     G.cfg = cfg; G.worldW = cfg.worldW;
-    G.player = { x: 80, y: GROUND_Y, vx: 0, vy: 0, facing: 1, onGround: true, carrying: null, hearts: 5, invuln: 0, action: 0, walkT: 0, walkF: 0, tex: 'man_idle' };
-    G.cops = []; G.projectiles = []; G.bubbles = [];
+    // hearts carry over between levels (you don't get a full heal) — see the +1 on clear
+    G.player = { x: 80, y: GROUND_Y, vx: 0, vy: 0, facing: 1, onGround: true, carrying: null, hearts: G.carryHearts, invuln: 0, action: 0, walkT: 0, walkF: 0, tex: 'man_idle' };
+    G.cops = []; G.projectiles = []; G.bubbles = []; G.binMsgShown = false;
     G.bins = [];
-    // the coppers have nicked all the bins from London Eye onward — you throw red bricks
+    // plenty of bins (coppers nick them from London Eye onward — then you throw red bricks)
+    const isBrick = cfg.weapon === 'brick';
     const colors = ['bin_blue', 'bin_brown', 'bin_grey'];
+    const spacing = isBrick ? 170 : 130;   // bins are dense so there's always one near
     let n = 0;
-    for (let x = 200; x < cfg.worldW - 160; x += 240) {
-      G.bins.push({ x, y: GROUND_Y, key: cfg.weapon === 'brick' ? 'brick' : colors[n % 3] }); n++;
+    for (let x = 150; x < cfg.worldW - 120; x += spacing) {
+      G.bins.push({ x, y: GROUND_Y, key: isBrick ? 'brick' : colors[n % 3] }); n++;
     }
     // props
     G.props = { back: [], front: [] };
@@ -101,7 +120,7 @@ window.UKP = window.UKP || {};
       return;
     }
     if (G.state === 'clear') {
-      if (I().anyPressed(['Enter', 'Space'])) { G.stageIndex++; startStage(); }
+      if (I().anyPressed(['Enter', 'Space'])) { G.carryHearts = Math.min(5, G.player.hearts + 1); G.stageIndex++; startStage(); }
       return;
     }
     if (G.state === 'over' || G.state === 'win') {
@@ -119,7 +138,7 @@ window.UKP = window.UKP || {};
       pc.facing = 1; pc.y = GROUND_Y; pc.vy = 0; pc.onGround = true;
       pc.x = Math.min(pc.x + 230 * dt, G.worldW - 20);
       pc.tex = (Math.floor(G.t * 10) % 2) ? 'man_walk1' : 'man_walk2';
-      G.scrollX = UKP.clamp(pc.x - 160, 0, Math.max(0, G.worldW - VW));
+      G.scrollX = UKP.clamp(pc.x - VW / 3, 0, Math.max(0, G.worldW - VW));
       for (const c of G.cops) {
         if (!c.ko && c.x > pc.x - 40 && c.x < pc.x + 80) { // plough the line — they scatter like bowling pins
           c.hp = 1; koCop(c);
@@ -133,7 +152,7 @@ window.UKP = window.UKP || {};
         if (c.ko) { c.vy += GRAV * dt; c.x += c.vx * dt; c.y += c.vy * dt; c.rot += dt * (c.spin || 8) * (c.vx < 0 ? -1 : 1); c.koT -= dt; }
       }
       G.cops = G.cops.filter(c => !(c.ko && c.koT <= 0));
-      if (pc.x >= G.worldW - 22) { G.stageIndex++; startStage(); }
+      if (pc.x >= G.worldW - 22) { G.carryHearts = Math.min(5, pc.hearts + 1); G.stageIndex++; startStage(); }
       return;
     }
 
@@ -162,7 +181,7 @@ window.UKP = window.UKP || {};
     else p.tex = 'man_idle';
 
     // camera
-    G.scrollX = UKP.clamp(p.x - 160, 0, Math.max(0, G.worldW - VW));
+    G.scrollX = UKP.clamp(p.x - VW / 3, 0, Math.max(0, G.worldW - VW));
 
     // pick up a heart
     for (let i = G.hearts.length - 1; i >= 0; i--) {
@@ -172,6 +191,17 @@ window.UKP = window.UKP || {};
         G.hearts.splice(i, 1);
         sfx().collect && sfx().collect();
         bubble(p.x, p.y - 50, '+1 HEART', '#e23b3b');
+      }
+    }
+
+    // bin-arrest level: protest as you reach the riot van
+    if (G.cfg.binScene && !G.binMsgShown) {
+      for (const pr of G.props.back) {
+        if (pr.img === 'binvan' && Math.abs(p.x - pr.x) < 95) {
+          G.binMsgShown = true;
+          setMessage('OUR BINS!', "OH NOO, YOU WON'T TAKE OUR BINS!", 2.6);
+          break;
+        }
       }
     }
 
@@ -198,6 +228,7 @@ window.UKP = window.UKP || {};
   }
   function stompCop(c) {
     sfx().stomp && sfx().stomp();
+    G.everStomped = true;
     if (c.isBoss) { c.kneel = 0.6; hitBoss(1); return; }
     c.knees += 1; c.kneel = 1.8; G.score += 50;
     if (c.knees >= 3) { koCop(c); return; }
@@ -219,7 +250,7 @@ window.UKP = window.UKP || {};
     let near = null, nd = 28;
     for (const b of G.bins) { const d = Math.abs(b.x - p.x); if (d < nd) { nd = d; near = b; } }
     if (near) {
-      p.carrying = near.key; G.bins = G.bins.filter(b => b !== near); p.action = 0.18; sfx().pickup && sfx().pickup();
+      p.carrying = near.key; G.bins = G.bins.filter(b => b !== near); p.action = 0.18; G.everPicked = true; sfx().pickup && sfx().pickup();
       if (near.key !== 'brick' && Math.random() < 0.22) permitShout(); // the one good gag
       return;
     }
@@ -232,7 +263,7 @@ window.UKP = window.UKP || {};
   }
   function throwBin() {
     const p = G.player;
-    const key = p.carrying; p.carrying = null; p.action = 0.26; p.tex = 'man_throw';
+    const key = p.carrying; p.carrying = null; p.action = 0.26; p.tex = 'man_throw'; G.everThrew = true;
     G.projectiles.push({ x: p.x + p.facing * 10, y: p.y - 36, vx: p.facing * 250, vy: -210, key, rot: 0 });
     if (G.cfg.weapon === 'brick') { sfx().brick && sfx().brick(); } else { sfx().throw && sfx().throw(); }
     if (Math.random() < 0.4) bubble(p.x, p.y - 50, 'HAVE IT!', '#ffffff');
@@ -323,7 +354,7 @@ window.UKP = window.UKP || {};
     G.boss = spawnCop(true);
     sfx().siren && sfx().siren();
     setMessage('VILLAIN!', G.cfg.bossName, 1.6);
-    bubble(G.boss.x, G.boss.y - 60, UKP.choice(BOSS_LINES), '#ff8a3a');
+    bubble(G.boss.x, G.boss.y - 60, UKP.choice(bossLines()), '#ff8a3a');
   }
 
   function updateCops(dt) {
@@ -384,7 +415,7 @@ window.UKP = window.UKP || {};
     const c = G.boss; if (!c) return;
     c.hp -= dmg; c.flash = 0.12; c.x += G.player.facing * 6; sfx().bossHit && sfx().bossHit(); G.score += 60;
     if (c.hp <= 0) defeatBoss();
-    else react(c, BOSS_HIT, '#ff8a3a');
+    else react(c, bossHit(), '#ff8a3a');
   }
   function defeatBoss() {
     koSprite(G.boss); G.boss = null; G.bossActive = false; G.score += 1000;
@@ -425,7 +456,7 @@ window.UKP = window.UKP || {};
     if (G.state === 'title') { renderTitle(ctx); return; }
     if (G.state === 'win') { renderWin(ctx); return; }
 
-    ctx.drawImage(SP.sky, 0, 0);
+    fillSky(ctx);
     // landmark skyline for this stage (rises above the rooftops)
     const lm = SP[G.cfg.sky] || SP.sky_generic;
     const sk = G.scrollX * 0.4;
@@ -490,6 +521,7 @@ window.UKP = window.UKP || {};
     for (const pr of G.props.front) spr(ctx, SP[pr.img], pr.x, pr.y, 1, 1);
     // bubbles
     for (const b of G.bubbles) drawBubble(ctx, b);
+    drawPrompts(ctx);
 
     drawHUD(ctx);
     if (G.msg) drawMessage(ctx);
@@ -498,6 +530,31 @@ window.UKP = window.UKP || {};
   function tile(ctx, img, w, y) {
     const start = Math.floor(G.scrollX / w) * w;
     for (let wx = start; wx < G.scrollX + VW; wx += w) ctx.drawImage(img, Math.round(wx - G.scrollX), y);
+  }
+
+  // contextual onboarding prompts — shown until you do each thing once, then they stop
+  function promptAt(ctx, worldX, y, text) {
+    const sx = Math.round(worldX - G.scrollX);
+    const w = UKP.textWidth(text, 1) + 6;
+    ctx.fillStyle = 'rgba(0,0,0,0.72)';
+    ctx.fillRect(Math.round(sx - w / 2), Math.round(y - 9), w, 11);
+    UKP.drawTextCentered(ctx, text, sx, Math.round(y - 7), 1, '#ffe14a');
+  }
+  function drawPrompts(ctx) {
+    const p = G.player;
+    if (!p || G.charging) return;
+    const bob = Math.abs(Math.sin(G.t * 5)) * 3;
+    if (!G.everPicked && !p.carrying) {
+      let near = null, nd = 44;
+      for (const b of G.bins) { const d = Math.abs(b.x - p.x); if (d < nd) { nd = d; near = b; } }
+      if (near) promptAt(ctx, near.x, near.y - 30 - bob, 'GRAB!');
+    }
+    if (p.carrying && !G.everThrew) promptAt(ctx, p.x, p.y - 60 - bob, 'THROW IT!');
+    if (!G.everStomped) {
+      let c = null, nd = 80;
+      for (const k of G.cops) { if (k.ko || k.isBoss) continue; const d = Math.abs(k.x - p.x); if (d < nd) { nd = d; c = k; } }
+      if (c) promptAt(ctx, c.x, c.y - 44 * (c.scale || 1) - 8 - bob, 'JUMP ON HEAD!');
+    }
   }
 
   function drawBubble(ctx, b) {
@@ -511,6 +568,7 @@ window.UKP = window.UKP || {};
   }
 
   function drawHUD(ctx) {
+    if (VW < 320) return drawHUDCompact(ctx); // narrow mobile portrait
     const SP = UKP.SP;
     ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, VW, HUD_H);
     ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fillRect(0, HUD_H - 1, VW, 1);
@@ -537,42 +595,62 @@ window.UKP = window.UKP || {};
     UKP.drawText(ctx, G.bossActive ? G.cfg.bossName : 'ON PATROL', bx, by, 1, '#ffd2c2');
   }
 
+  // compact HUD for narrow portrait screens
+  function drawHUDCompact(ctx) {
+    const SP = UKP.SP;
+    ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, VW, HUD_H);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fillRect(0, HUD_H - 1, VW, 1);
+    const hn = Math.min(5, G.player.hearts);
+    for (let i = 0; i < 5; i++) ctx.drawImage(i < hn ? SP.heart : SP.heart_empty, 4 + i * 11, 5);
+    UKP.drawText(ctx, String(G.score).padStart(6, '0'), 4, 18, 1, '#ffd23a');
+    ctx.drawImage(SP.flag, VW - 22, 5, 18, 12);
+    if (G.bossActive && G.boss) {
+      const bw = VW - 8;
+      ctx.fillStyle = '#3a1414'; ctx.fillRect(4, 31, bw, 8);
+      ctx.fillStyle = '#e2502a'; ctx.fillRect(5, 32, Math.round((bw - 2) * Math.max(0, G.boss.hp / G.cfg.bossHp)), 6);
+    } else {
+      UKP.drawText(ctx, G.cfg.name, 4, 31, 1, '#7d8389');
+    }
+  }
+
   function drawMessage(ctx) {
     UKP.drawTextCentered(ctx, G.msg, VW / 2, 116, 3, '#ffffff');
     if (G.msgSub) UKP.drawTextCentered(ctx, G.msgSub, VW / 2, 150, 1, '#ffd23a');
   }
 
+  function fitScale(text, max) { return Math.max(1, Math.min(max, Math.floor((VW - 16) / (text.length * 6)))); }
+
   function renderTitle(ctx) {
     const SP = UKP.SP;
-    ctx.drawImage(SP.sky, 0, 0);
+    fillSky(ctx);
     for (let x = 0; x < VW; x += 200) ctx.drawImage(SP.sky_bigben, x, 48);
-    ctx.drawImage(SP.cloud, 60, 36); ctx.drawImage(SP.cloud, 330, 60);
+    ctx.drawImage(SP.cloud, Math.round(VW * 0.12), 36); ctx.drawImage(SP.cloud, Math.round(VW * 0.6), 60);
     for (let x = 0; x < VW; x += 40) ctx.drawImage(SP.pave, x, 246);
     ctx.fillStyle = UKP.C.ROAD; ctx.fillRect(0, 268, VW, VH - 268);
     const bob = Math.sin(G.t * 4) * 3;
-    spr2(ctx, SP.man_idle, 120, 248 + bob, 1, 1.6);
-    spr2(ctx, SP.bin_blue, 240, 210, 1, 1.4);
-    spr2(ctx, SP.cop_idle, 360, 248 - bob, -1, 1.6);
-    UKP.drawTextCentered(ctx, 'NICK THE BIN', VW / 2, 52, 4, '#ffffff');
-    UKP.drawTextCentered(ctx, 'NO NONSENSE', VW / 2, 92, 2, '#ffd23a');
-    if (Math.floor(G.t * 2) % 2 === 0) UKP.drawTextCentered(ctx, 'PRESS ENTER OR CLICK', VW / 2, 150, 1, '#ffffff');
-    UKP.drawTextCentered(ctx, 'MOVE  ARROWS    JUMP  UP    BIN/BASH  SPACE', VW / 2, 175, 1, '#dfe6ee');
+    spr2(ctx, SP.man_idle, VW * 0.25, 248 + bob, 1, 1.6);
+    spr2(ctx, SP.bin_blue, VW * 0.5, 210, 1, 1.4);
+    spr2(ctx, SP.cop_idle, VW * 0.75, 248 - bob, -1, 1.6);
+    UKP.drawTextCentered(ctx, 'NICK THE BIN', VW / 2, 52, fitScale('NICK THE BIN', 4), '#ffffff');
+    UKP.drawTextCentered(ctx, 'NO NONSENSE', VW / 2, 92, fitScale('NO NONSENSE', 2), '#ffd23a');
+    if (Math.floor(G.t * 2) % 2 === 0) UKP.drawTextCentered(ctx, VW < 320 ? 'TAP TO START' : 'PRESS ENTER OR CLICK', VW / 2, 150, 1, '#ffffff');
+    if (VW >= 360) UKP.drawTextCentered(ctx, 'MOVE  ARROWS    JUMP  UP    BIN/BASH  SPACE', VW / 2, 175, 1, '#dfe6ee');
   }
   function renderWin(ctx) {
     const SP = UKP.SP;
-    ctx.drawImage(SP.sky, 0, 0);
+    fillSky(ctx);
     for (let x = 0; x < VW; x += 200) ctx.drawImage(SP.sky_bigben, x, 48);
-    ctx.drawImage(SP.cloud, 70, 40); ctx.drawImage(SP.cloud, 320, 64);
-    ctx.drawImage(SP.bigben_tower, 232, 50, 56, 196);
+    ctx.drawImage(SP.cloud, Math.round(VW * 0.14), 40); ctx.drawImage(SP.cloud, Math.round(VW * 0.62), 64);
+    ctx.drawImage(SP.bigben_tower, Math.round(VW / 2 - 28), 50, 56, 196);
     for (let x = 0; x < VW; x += 40) ctx.drawImage(SP.pave_stone, x, 246);
     const bob = Math.sin(G.t * 4) * 3;
-    spr2(ctx, SP.man_idle, 150, 248 + bob, 1, 1.8);
-    spr2(ctx, SP.bigbin, 330, 248, 1, 1.2);
-    spr2(ctx, SP.mate, 300, 248 - bob, 1, 1.4);
-    UKP.drawTextCentered(ctx, 'YOU WIN!', VW / 2, 60, 4, '#ffd23a');
-    UKP.drawTextCentered(ctx, "BRITAIN'S BINS ARE FREE", VW / 2, 100, 1, '#ffffff');
+    spr2(ctx, SP.man_idle, VW * 0.28, 248 + bob, 1, 1.8);
+    spr2(ctx, SP.bigbin, VW * 0.72, 248, 1, 1.2);
+    spr2(ctx, SP.mate, VW * 0.62, 248 - bob, 1, 1.4);
+    UKP.drawTextCentered(ctx, 'YOU WIN!', VW / 2, 60, fitScale('YOU WIN!', 4), '#ffd23a');
+    UKP.drawTextCentered(ctx, "BRITAIN'S BINS ARE FREE", VW / 2, 100, fitScale("BRITAIN'S BINS ARE FREE", 1), '#ffffff');
     UKP.drawTextCentered(ctx, 'SCORE ' + String(G.score).padStart(6, '0'), VW / 2, 118, 1, '#ffffff');
-    if (Math.floor(G.t * 2) % 2 === 0) UKP.drawTextCentered(ctx, 'PRESS ENTER TO PLAY AGAIN', VW / 2, 150, 1, '#dfe6ee');
+    if (Math.floor(G.t * 2) % 2 === 0) UKP.drawTextCentered(ctx, VW < 320 ? 'TAP TO PLAY AGAIN' : 'PRESS ENTER TO PLAY AGAIN', VW / 2, 150, 1, '#dfe6ee');
   }
   // simple non-camera sprite blit for the title screen
   function spr2(ctx, img, x, feetY, facing, scale) {
