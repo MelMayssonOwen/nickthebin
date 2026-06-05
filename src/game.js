@@ -26,6 +26,8 @@ window.UKP = window.UKP || {};
   const hitLines = () => (G.cfg && G.cfg.weapon === 'brick') ? COP_HIT_BRICK : COP_HIT_BIN;
   // the hero's catchphrases (in reply)
   const HERO_LINES = ["I DON'T THINK SO, MATE.", "DON'T THINK YOU 'AVE, MATE.", "NOT TODAY, OFFICER."];
+  // the hero's taunts aimed squarely at Starmer
+  const HERO_STARMER = ["WANKER!", "GET IN THE BIN, KEIR!", "TWO-TIER TOSSER!", "DON'T THINK YOU 'AVE, MATE."];
   const BOSS_LINES = ["YOU'RE GOING DAHN THE NICK.", "I AM THE LAW.", "NICE TRY, SUNSHINE."];
   const BOSS_HIT = ["HOW DARE YOU!", "THIS IS AN OUTRAGE!", "MY OFFICE WILL HEAR OF THIS!", "STEADY ON!"];
   // PM Starmer says Starmer things
@@ -246,8 +248,8 @@ window.UKP = window.UKP || {};
       return;
     }
     if (p.carrying) { throwBin(); return; }
-    // nearest bin
-    let near = null, nd = 28;
+    // nearest bin (generous range so it never feels random)
+    let near = null, nd = 42;
     for (const b of G.bins) { const d = Math.abs(b.x - p.x); if (d < nd) { nd = d; near = b; } }
     if (near) {
       p.carrying = near.key; G.bins = G.bins.filter(b => b !== near); p.action = 0.18; G.everPicked = true; sfx().pickup && sfx().pickup();
@@ -400,7 +402,12 @@ window.UKP = window.UKP || {};
   }
 
   // a hit reaction: the victim complains, the hero often replies with a catchphrase
-  function heroReply() { if (Math.random() < 0.3) bubble(G.player.x, G.player.y - 52, UKP.choice(HERO_LINES), '#bfe3ff'); }
+  // the hero always replies in white, above himself (never a cop/boss line); Starmer gets the special abuse
+  function heroReply() {
+    if (Math.random() >= 0.32) return;
+    const lines = (G.bossActive && G.cfg.bossKind === 'starmer') ? HERO_STARMER : HERO_LINES;
+    bubble(G.player.x, G.player.y - 52, UKP.choice(lines), '#ffffff');
+  }
   function react(c, lines, col) { if (Math.random() < 0.4) bubble(c.x, c.y - 50, UKP.choice(lines), col || '#ffd23a'); heroReply(); }
 
   // a throw/bash hit: the shield absorbs the first one (clang), otherwise they go down
@@ -545,7 +552,7 @@ window.UKP = window.UKP || {};
     if (!p || G.charging) return;
     const bob = Math.abs(Math.sin(G.t * 5)) * 3;
     if (!G.everPicked && !p.carrying) {
-      let near = null, nd = 44;
+      let near = null, nd = 42; // match the pickup range so GRAB only shows when you can actually grab
       for (const b of G.bins) { const d = Math.abs(b.x - p.x); if (d < nd) { nd = d; near = b; } }
       if (near) promptAt(ctx, near.x, near.y - 30 - bob, 'GRAB!');
     }
