@@ -14,10 +14,17 @@
       image-rendering: pixelated; image-rendering: crisp-edges;
       display: block; background: #3f9fe6;
     }
+    #disclaimer {
+      position: fixed; left: 0; right: 0; bottom: 2px;
+      text-align: center; font-family: monospace; font-size: 9px;
+      color: #8a9098; opacity: 0.55; letter-spacing: 0.3px;
+      pointer-events: none; user-select: none; z-index: 40;
+    }
   </style>
 </head>
 <body>
   <div id="game"></div>
+  <div id="disclaimer">Fictional · satirical · not affiliated with any person or force.</div>
 
   <!-- dependency-free: no CDN, no fonts. order matters. -->
   <script src="src/audio.js"></script>
