@@ -139,11 +139,11 @@ window.UKP = window.UKP || {};
       if (dt > 0.25) dt = 0.25; // avoid spiral after a tab-switch
       acc += dt;
       let steps = 0;
-      while (acc >= STEP && steps < 5) { update(STEP); acc -= STEP; steps++; }
-      if (steps === 0 && acc > 0) { /* still render */ }
+      // consume just-pressed edges after EACH step so one tap can't be read twice
+      // (that double-read was picking up a bin AND throwing it in a single press)
+      while (acc >= STEP && steps < 5) { update(STEP); UKP.input._endFrame(); acc -= STEP; steps++; }
       ctx.imageSmoothingEnabled = false;
       render(ctx);
-      UKP.input._endFrame();
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
