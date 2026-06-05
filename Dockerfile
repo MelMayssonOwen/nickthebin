@@ -7,6 +7,8 @@ RUN apk add --no-cache goaccess apache2-utils
 RUN rm -rf /usr/share/nginx/html/*
 COPY index.html /usr/share/nginx/html/index.html
 COPY src/ /usr/share/nginx/html/src/
+COPY blog/ /usr/share/nginx/html/blog/
+COPY og.png robots.txt sitemap.xml /usr/share/nginx/html/
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY entrypoint.sh /entrypoint.sh
 
