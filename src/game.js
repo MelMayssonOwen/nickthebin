@@ -27,7 +27,7 @@ window.UKP = window.UKP || {};
   // the hero's catchphrases (in reply)
   const HERO_LINES = ["I DON'T THINK SO, MATE.", "DON'T THINK YOU 'AVE, MATE.", "NOT TODAY, OFFICER."];
   // the hero's taunts aimed squarely at Starmer
-  const HERO_STARMER = ["WANKER!", "GET IN THE BIN, KEIR!", "TWO-TIER TOSSER!", "DON'T THINK YOU 'AVE, MATE."];
+  const HERO_STARMER = ["WANKER!", "GET IN THE BIN, KEIR!", "TWO-TIER TOSSER!", "STARMER OUT!", "DON'T THINK YOU 'AVE, MATE."];
   const BOSS_LINES = ["YOU'RE GOING DAHN THE NICK.", "I AM THE LAW.", "NICE TRY, SUNSHINE."];
   const BOSS_HIT = ["HOW DARE YOU!", "THIS IS AN OUTRAGE!", "MY OFFICE WILL HEAR OF THIS!", "STEADY ON!"];
   // PM Starmer says Starmer things
@@ -40,7 +40,7 @@ window.UKP = window.UKP || {};
 
   const STAGES = [
     { name: 'BRICK LANE', worldW: 2200, target: 6, copSpeed: 36, copMax: 4, spawn: 1.5, bossHp: 5, bossName: 'SGT. NONSENSE', bossKind: 'chief', weapon: 'bin', sky: 'sky_generic', sign: ['NO', 'NONSENSE'], theme: { building: 'houses', wall: 'wall', ground: 'pave' } },
-    { name: '10 DOWNING STREET', worldW: 2400, target: 7, copSpeed: 40, copMax: 4, spawn: 1.4, bossHp: 8, bossName: 'PM STARMER', bossKind: 'starmer', weapon: 'bin', sky: 'sky_downing', sign: ['NO.', '10'], graffiti: 'TWO-TIER KEIR', theme: { building: 'bld_downing', wall: 'rail_iron', ground: 'pave_dark' } },
+    { name: '10 DOWNING STREET', worldW: 2400, target: 7, copSpeed: 40, copMax: 4, spawn: 1.4, bossHp: 8, bossName: 'PM STARMER', bossKind: 'starmer', weapon: 'bin', sky: 'sky_downing', sign: ['NO.', '10'], graffiti: 'TWO-TIER KEIR', graffiti2: 'STARMER OUT', theme: { building: 'bld_downing', wall: 'rail_iron', ground: 'pave_dark' } },
     { name: 'BIN THERE, NICKED THAT', worldW: 2500, target: 8, copSpeed: 44, copMax: 5, spawn: 1.3, bossHp: 8, bossName: 'SGT. SKIP', bossKind: 'chief', weapon: 'bin', binScene: true, sky: 'sky_generic', sign: ['BIN', 'AMNESTY'], theme: { building: 'houses', wall: 'rail_iron', ground: 'pave' } },
     { name: 'LONDON EYE', worldW: 2600, target: 9, copSpeed: 48, copMax: 5, spawn: 1.2, bossHp: 10, bossName: 'INSP. TRUNCHEON', bossKind: 'chief', weapon: 'brick', sky: 'sky_eye', sign: ['MIND', 'THE GAP'], theme: { building: 'bld_river', wall: 'rail_stone', ground: 'pave_stone' } },
     { name: 'TOWER BRIDGE', worldW: 2800, target: 10, copSpeed: 52, copMax: 6, spawn: 1.1, bossHp: 11, bossName: 'SUPT. KIPPER', bossKind: 'chief', weapon: 'brick', chargeEnd: true, sky: 'sky_bridge', sign: ['KEEP', 'LEFT'], theme: { building: 'bld_bridge', wall: 'rail_blue', ground: 'road_deck' } },
@@ -425,9 +425,23 @@ window.UKP = window.UKP || {};
     else react(c, bossHit(), '#ff8a3a');
   }
   function defeatBoss() {
+    const starmerBoss = G.cfg.bossKind === 'starmer';
     koSprite(G.boss); G.boss = null; G.bossActive = false; G.score += 1000;
-    if (G.stageIndex + 1 < STAGES.length) { sfx().clear && sfx().clear(); G.state = 'clear'; setMessage('STAGE CLEAR!', 'PRESS ENTER'); }
+    if (starmerBoss) starmerChant();
+    if (G.stageIndex + 1 < STAGES.length) {
+      sfx().clear && sfx().clear(); G.state = 'clear';
+      setMessage('STAGE CLEAR!', starmerBoss ? 'STARMER OUT!' : 'PRESS ENTER');
+    }
     else { sfx().win && sfx().win(); G.state = 'win'; setMessage('NO NONSENSE!', 'YOU WIN - PRESS ENTER'); }
+  }
+  // the crowd erupts when the PM goes in the bin: chant bubbles + SFX
+  function starmerChant() {
+    sfx().chant && sfx().chant();
+    const y = GROUND_Y - 40;
+    for (let i = 0; i < 6; i++) {
+      const x = G.scrollX + 50 + (i / 5) * Math.max(120, VW - 100);
+      bubble(x, y - (i % 2) * 16, i % 2 ? 'OUT!' : 'STARMER', '#ffd23a');
+    }
   }
 
   function hurtPlayer() {
@@ -482,6 +496,7 @@ window.UKP = window.UKP || {};
     ctx.fillStyle = UKP.C.ROAD; ctx.fillRect(0, 268, VW, VH - 268);
     // optional wall graffiti (e.g. the No.10 hint)
     if (G.cfg.graffiti) UKP.drawText(ctx, G.cfg.graffiti, Math.round(360 - G.scrollX), GROUND_Y - 78, 1, '#d23a3a');
+    if (G.cfg.graffiti2) UKP.drawText(ctx, G.cfg.graffiti2, Math.round(980 - G.scrollX), GROUND_Y - 70, 1, '#d23a3a');
     // back props (the sign shows this stage's text)
     for (const pr of G.props.back) {
       spr(ctx, SP[pr.img], pr.x, pr.y, 1, 1);
@@ -600,6 +615,7 @@ window.UKP = window.UKP || {};
     ctx.fillStyle = G.bossActive ? '#3a1414' : '#1a1f2a'; ctx.fillRect(bx, by, bw, 8);
     if (G.bossActive && G.boss) { ctx.fillStyle = '#e2502a'; ctx.fillRect(bx + 1, by + 1, Math.round((bw - 2) * Math.max(0, G.boss.hp / G.cfg.bossHp)), 6); }
     UKP.drawText(ctx, G.bossActive ? G.cfg.bossName : 'ON PATROL', bx, by, 1, '#ffd2c2');
+    if (G.bossActive && G.cfg.bossKind === 'starmer') UKP.drawText(ctx, 'STARMER OUT', bx, by + 9, 1, '#ffd23a');
   }
 
   // compact HUD for narrow portrait screens

@@ -98,5 +98,13 @@ window.UKP = window.UKP || {};
     over() { arp([392, 311, 247, 196], 0.16, 0.24, 'triangle', 0.16); },
     siren() { sweep(640, 1040, 0.4, 'sine', 0.08); sweep(1040, 640, 0.4, 'sine', 0.08, 0.4); },
     title() { arp([392, 523, 659, 784], 0.09, 0.14, 'square', 0.14); },
+    // crowd "OUT! OUT! OUT!" — three rhythmic low pulses with a rising punch
+    chant() {
+      for (let i = 0; i < 3; i++) {
+        tone(160, 0.12, 'square', 0.18, i * 0.22);
+        sweep(120, 220, 0.12, 'sawtooth', 0.12, i * 0.22);
+        noise(0.08, 0.1, 800, i * 0.22);
+      }
+    },
   };
 })(window.UKP);
