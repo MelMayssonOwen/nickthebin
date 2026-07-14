@@ -7,7 +7,7 @@
   <meta name="description" content="Nick the Bin is a free, daft 8-bit British beat-'em-up. Lug wheelie bins at custodian-helmet bobbies across London — Brick Lane to Westminster — past 'two-tier' No.10. Plays in the browser, no download. Satire." />
   <meta name="keywords" content="nick the bin, two-tier policing, two-tier keir, 8-bit game, british game, throw bins at police, free browser game, pixel art beat em up, uk satire game" />
   <link rel="canonical" href="https://nickthebin.com/" />
-  <meta name="robots" content="index, follow" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
   <meta name="theme-color" content="#0b0b0f" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Nick the Bin" />
@@ -30,16 +30,42 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "VideoGame",
-    "name": "Nick the Bin",
-    "url": "https://nickthebin.com/",
-    "image": "https://nickthebin.com/og.png",
-    "description": "A free, satirical 8-bit British beat-'em-up where you throw wheelie bins at police officers across London landmarks.",
-    "genre": ["Arcade", "Beat 'em up", "Satire"],
-    "applicationCategory": "Game",
-    "operatingSystem": "Web browser",
-    "playMode": "SinglePlayer",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" }
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://nickthebin.com/#organization",
+        "name": "Nick the Bin",
+        "url": "https://nickthebin.com/",
+        "description": "Nick the Bin is a free, satirical 8-bit British beat-'em-up that plays in a web browser.",
+        "sameAs": []
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://nickthebin.com/#website",
+        "url": "https://nickthebin.com/",
+        "name": "Nick the Bin",
+        "description": "A free, satirical 8-bit British beat-'em-up that plays in a web browser.",
+        "inLanguage": "en-GB",
+        "publisher": { "@id": "https://nickthebin.com/#organization" }
+      },
+      {
+        "@type": ["VideoGame", "SoftwareApplication"],
+        "@id": "https://nickthebin.com/#game",
+        "name": "Nick the Bin",
+        "url": "https://nickthebin.com/",
+        "image": "https://nickthebin.com/og.png",
+        "description": "A free, satirical 8-bit British beat-'em-up where you throw wheelie bins at police officers across London landmarks.",
+        "genre": ["Arcade", "Beat 'em up", "Satire"],
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any operating system with a modern web browser",
+        "browserRequirements": "Requires JavaScript and a modern web browser.",
+        "playMode": "SinglePlayer",
+        "isAccessibleForFree": true,
+        "isPartOf": { "@id": "https://nickthebin.com/#website" },
+        "publisher": { "@id": "https://nickthebin.com/#organization" },
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" }
+      }
+    ]
   }
   </script>
   <style>
@@ -66,6 +92,8 @@
   <header class="sr-only">
     <h1>Nick the Bin — the 8-bit Two-Tier Britain game</h1>
     <p>Nick the Bin is a free, satirical 8-bit British beat-'em-up. You play British Man, chucking wheelie bins at custodian-helmet police officers across London — Brick Lane, 10 Downing Street, the London Eye, Tower Bridge and Westminster's Big Ben. No download; it plays in your browser on desktop and mobile.</p>
+    <h2>How to play Nick the Bin</h2>
+    <p>Nick the Bin is a single-player browser game with six London-themed stages. Move with the arrow keys or A and D, jump with the up arrow or W, and use the space bar to pick up, throw or bash with a bin. The game is free, requires no account and has no download.</p>
     <p>Read: <a href="/blog/two-tier-policing-in-the-uk.html">What is two-tier policing? The UK debate explained</a>.</p>
   </header>
   <div id="game"></div>
