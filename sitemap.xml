@@ -1,15 +1,123 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://nickthebin.com/</loc>
-    <lastmod>2026-07-14</lastmod>
+    <lastmod>2026-08-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nickthebin.com/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://nickthebin.com/es/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://nickthebin.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://nickthebin.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nickthebin.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nickthebin.com/" />
+  </url>
+  <url>
+    <loc>https://nickthebin.com/es/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nickthebin.com/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://nickthebin.com/es/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://nickthebin.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://nickthebin.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nickthebin.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nickthebin.com/" />
+  </url>
+  <url>
+    <loc>https://nickthebin.com/fr/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nickthebin.com/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://nickthebin.com/es/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://nickthebin.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://nickthebin.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nickthebin.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nickthebin.com/" />
+  </url>
+  <url>
+    <loc>https://nickthebin.com/it/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nickthebin.com/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://nickthebin.com/es/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://nickthebin.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://nickthebin.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nickthebin.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nickthebin.com/" />
+  </url>
+  <url>
+    <loc>https://nickthebin.com/pt/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nickthebin.com/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://nickthebin.com/es/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://nickthebin.com/fr/" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://nickthebin.com/it/" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nickthebin.com/pt/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nickthebin.com/" />
   </url>
   <url>
     <loc>https://nickthebin.com/blog/two-tier-policing-in-the-uk.html</loc>
     <lastmod>2026-06-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nickthebin.com/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://nickthebin.com/es/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://nickthebin.com/fr/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://nickthebin.com/it/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nickthebin.com/pt/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nickthebin.com/blog/two-tier-policing-in-the-uk.html" />
+  </url>
+  <url>
+    <loc>https://nickthebin.com/es/blog/two-tier-policing-in-the-uk.html</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nickthebin.com/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://nickthebin.com/es/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://nickthebin.com/fr/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://nickthebin.com/it/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nickthebin.com/pt/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nickthebin.com/blog/two-tier-policing-in-the-uk.html" />
+  </url>
+  <url>
+    <loc>https://nickthebin.com/fr/blog/two-tier-policing-in-the-uk.html</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nickthebin.com/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://nickthebin.com/es/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://nickthebin.com/fr/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://nickthebin.com/it/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nickthebin.com/pt/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nickthebin.com/blog/two-tier-policing-in-the-uk.html" />
+  </url>
+  <url>
+    <loc>https://nickthebin.com/it/blog/two-tier-policing-in-the-uk.html</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nickthebin.com/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://nickthebin.com/es/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://nickthebin.com/fr/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://nickthebin.com/it/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nickthebin.com/pt/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nickthebin.com/blog/two-tier-policing-in-the-uk.html" />
+  </url>
+  <url>
+    <loc>https://nickthebin.com/pt/blog/two-tier-policing-in-the-uk.html</loc>
+    <lastmod>2026-06-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nickthebin.com/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://nickthebin.com/es/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://nickthebin.com/fr/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="it" href="https://nickthebin.com/it/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nickthebin.com/pt/blog/two-tier-policing-in-the-uk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nickthebin.com/blog/two-tier-policing-in-the-uk.html" />
   </url>
 </urlset>

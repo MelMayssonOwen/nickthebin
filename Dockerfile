@@ -8,6 +8,10 @@ RUN rm -rf /usr/share/nginx/html/*
 COPY index.html /usr/share/nginx/html/index.html
 COPY src/ /usr/share/nginx/html/src/
 COPY blog/ /usr/share/nginx/html/blog/
+COPY es/ /usr/share/nginx/html/es/
+COPY fr/ /usr/share/nginx/html/fr/
+COPY it/ /usr/share/nginx/html/it/
+COPY pt/ /usr/share/nginx/html/pt/
 COPY og.png robots.txt sitemap.xml /usr/share/nginx/html/
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY entrypoint.sh /entrypoint.sh
