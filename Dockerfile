@@ -5,7 +5,7 @@ FROM nginx:alpine
 RUN apk add --no-cache goaccess apache2-utils
 
 RUN rm -rf /usr/share/nginx/html/*
-COPY index.html /usr/share/nginx/html/index.html
+COPY index.html 404.html /usr/share/nginx/html/
 COPY src/ /usr/share/nginx/html/src/
 COPY blog/ /usr/share/nginx/html/blog/
 COPY es/ /usr/share/nginx/html/es/

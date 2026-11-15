@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nick the Bin — Il Gioco 8-bit della Gran Bretagna «a Due Livelli» | Tira Bidoni ai Poliziotti</title>
   <meta name="description" content="Nick the Bin è un beat 'em up 8-bit britannico, gratuito e demenziale. Trascina bidoni della spazzatura contro poliziotti con l'elmetto in giro per Londra — da Brick Lane a Westminster — davanti al numero 10 «a due livelli». Si gioca nel browser, senza download. Satira." />
   <meta name="keywords" content="nick the bin, polizia a due livelli, two-tier keir, gioco 8-bit, gioco britannico, tirare bidoni alla polizia, gioco gratuito da browser, beat em up pixel art, gioco satirico britannico" />
@@ -90,9 +90,11 @@
       display: block; background: #3f9fe6;
     }
     #disclaimer {
-      position: fixed; left: 0; right: 0; bottom: 2px;
-      text-align: center; font-family: monospace; font-size: 9px;
-      color: #8a9098; opacity: 0.55; letter-spacing: 0.3px;
+      position: fixed; left: 50%; bottom: 2px; transform: translateX(-50%);
+      width: max-content; max-width: 96vw; padding: 1px 6px; border-radius: 4px;
+      background: rgba(11,11,15,.8);
+      text-align: center; font-family: monospace; font-size: 11px;
+      color: #b4bbc3; letter-spacing: 0.3px;
       pointer-events: none; user-select: none; z-index: 40;
     }
     /* crawlable, screen-reader content — does not change the game's appearance */
@@ -102,7 +104,7 @@
       font-family: monospace; font-size: 11px; letter-spacing: .2px;
       color: #8a9098; opacity: .8; background: rgba(11,11,15,.55); padding: 3px 6px; border-radius: 6px;
     }
-    .langswitch a { color: #8a9098; text-decoration: none; border-bottom: 1px dotted #566; }
+    .langswitch a { color: #8a9098; text-decoration: underline dotted #566; text-underline-offset: 2px; }
     .langswitch a:hover { color: #fff; }
     .langswitch strong { color: #d7dde3; font-weight: 700; }
   </style>
@@ -111,6 +113,7 @@
   <nav class="langswitch" aria-label="Lingua">
     <a href="https://nickthebin.com/">English</a> · <a href="https://nickthebin.com/es/">Español</a> · <a href="https://nickthebin.com/fr/">Français</a> · <strong aria-current="page">Italiano</strong> · <a href="https://nickthebin.com/pt/">Português</a>
   </nav>
+  <main id="main">
   <header class="sr-only">
     <h1>Nick the Bin — il gioco 8-bit della Gran Bretagna «a due livelli»</h1>
     <p>Nick the Bin è un beat 'em up 8-bit britannico, gratuito e satirico. Vesti i panni di British Man, che tira bidoni della spazzatura contro poliziotti con l'elmetto in giro per Londra — Brick Lane, il 10 di Downing Street, il London Eye, il Tower Bridge e il Big Ben di Westminster. Senza download: si gioca nel browser, su computer e su cellulare.</p>
@@ -118,7 +121,8 @@
     <p>Nick the Bin è un gioco per un giocatore da browser con sei livelli ambientati a Londra. Muoviti con le frecce o con A e D, salta con la freccia su o con W, e usa la barra spaziatrice per raccogliere, lanciare o colpire con un bidone. Il gioco è gratuito, non richiede un account e non va scaricato.</p>
     <p>Leggi: <a href="/it/blog/two-tier-policing-in-the-uk.html" data-umami-event="cta_click" data-umami-event-cta="read_explainer" data-umami-event-location="/it/">Cos'è la «polizia a due livelli»? Il dibattito britannico spiegato</a>.</p>
   </header>
-  <div id="game"></div>
+  <div id="game" role="img" aria-label="Gioco Nick the Bin: un picchiaduro su canvas, giocato con la tastiera o i pulsanti touch. Muoviti con le frecce o A e D, salta con su o W, spazio per raccogliere, lanciare o colpire."></div>
+  </main>
   <div id="disclaimer">Finzione · satira · nessuna affiliazione con persone o forze dell'ordine reali.</div>
 
   <!-- dependency-free: no CDN, no fonts. order matters. -->
