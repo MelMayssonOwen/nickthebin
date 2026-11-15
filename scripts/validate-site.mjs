@@ -156,4 +156,16 @@ for (const file of (await readdir("src")).filter((name) => name.endsWith(".js"))
   new Script(source, { filename: `src/${file}` });
 }
 
+const nginxConf = await readFile("nginx.conf", "utf8");
+assert(/try_files\s+\$uri\s+\$uri\/\s+=404;/.test(nginxConf), "nginx.conf: unknown paths must return 404, not fall back to index.html");
+assert(/error_page\s+404\s+\/404\.html;/.test(nginxConf), "nginx.conf: missing 404 error_page");
+const notFound = await readFile("404.html", "utf8");
+assert(/<a\s+href="\/"/.test(notFound), "404.html: must link home");
+assert(!/src="(?!\/)/.test(notFound) && !/href="(?!\/|https?:)/.test(notFound), "404.html: asset and link paths must be absolute");
+for (const file of ["index.html", ...LOCALES.filter((l) => l !== "en").map((l) => `${l}/index.html`)]) {
+  const html = await readFile(file, "utf8");
+  assert(!/user-scalable=no|maximum-scale/i.test(html), `${file}: viewport must allow zoom`);
+  assert(/<main[\s>]/i.test(html), `${file}: missing <main> landmark`);
+}
+
 console.log("Build validation passed: crawler access, snippets, JSON-LD, dates, sitemap, and JavaScript syntax.");

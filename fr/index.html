@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nick the Bin — Le Jeu 8-bit de la Grande-Bretagne «à Deux Vitesses» | Balancez des Poubelles aux Flics</title>
   <meta name="description" content="Nick the Bin est un beat 'em up 8-bit britannique, gratuit et complètement loufoque. Traînez des poubelles à roulettes contre des bobbies à casque à travers Londres — de Brick Lane à Westminster — devant le 10 Downing Street «à deux vitesses». Se joue dans le navigateur, sans téléchargement. Satire." />
   <meta name="keywords" content="nick the bin, police à deux vitesses, two-tier keir, jeu 8-bit, jeu britannique, lancer des poubelles sur la police, jeu gratuit dans le navigateur, beat em up pixel art, jeu satirique britannique" />
@@ -90,9 +90,11 @@
       display: block; background: #3f9fe6;
     }
     #disclaimer {
-      position: fixed; left: 0; right: 0; bottom: 2px;
-      text-align: center; font-family: monospace; font-size: 9px;
-      color: #8a9098; opacity: 0.55; letter-spacing: 0.3px;
+      position: fixed; left: 50%; bottom: 2px; transform: translateX(-50%);
+      width: max-content; max-width: 96vw; padding: 1px 6px; border-radius: 4px;
+      background: rgba(11,11,15,.8);
+      text-align: center; font-family: monospace; font-size: 11px;
+      color: #b4bbc3; letter-spacing: 0.3px;
       pointer-events: none; user-select: none; z-index: 40;
     }
     /* crawlable, screen-reader content — does not change the game's appearance */
@@ -102,7 +104,7 @@
       font-family: monospace; font-size: 11px; letter-spacing: .2px;
       color: #8a9098; opacity: .8; background: rgba(11,11,15,.55); padding: 3px 6px; border-radius: 6px;
     }
-    .langswitch a { color: #8a9098; text-decoration: none; border-bottom: 1px dotted #566; }
+    .langswitch a { color: #8a9098; text-decoration: underline dotted #566; text-underline-offset: 2px; }
     .langswitch a:hover { color: #fff; }
     .langswitch strong { color: #d7dde3; font-weight: 700; }
   </style>
@@ -111,6 +113,7 @@
   <nav class="langswitch" aria-label="Langue">
     <a href="https://nickthebin.com/">English</a> · <a href="https://nickthebin.com/es/">Español</a> · <strong aria-current="page">Français</strong> · <a href="https://nickthebin.com/it/">Italiano</a> · <a href="https://nickthebin.com/pt/">Português</a>
   </nav>
+  <main id="main">
   <header class="sr-only">
     <h1>Nick the Bin — le jeu 8-bit de la Grande-Bretagne «à deux vitesses»</h1>
     <p>Nick the Bin est un beat 'em up 8-bit britannique, gratuit et satirique. Vous incarnez British Man, qui balance des poubelles à roulettes sur des policiers à casque à travers Londres — Brick Lane, le 10 Downing Street, le London Eye, le Tower Bridge et le Big Ben de Westminster. Sans téléchargement : ça se joue dans le navigateur, sur ordinateur comme sur mobile.</p>
@@ -118,7 +121,8 @@
     <p>Nick the Bin est un jeu solo dans le navigateur avec six niveaux sur le thème de Londres. Déplacez-vous avec les flèches ou A et D, sautez avec la flèche du haut ou W, et utilisez la barre d'espace pour ramasser, lancer ou frapper avec une poubelle. Le jeu est gratuit, ne nécessite aucun compte et ne se télécharge pas.</p>
     <p>À lire : <a href="/fr/blog/two-tier-policing-in-the-uk.html" data-umami-event="cta_click" data-umami-event-cta="read_explainer" data-umami-event-location="/fr/">Qu'est-ce que la « police à deux vitesses » ? Le débat britannique expliqué</a>.</p>
   </header>
-  <div id="game"></div>
+  <div id="game" role="img" aria-label="Jeu Nick the Bin : un beat-em-up sur canvas, joué au clavier ou avec les boutons tactiles. Déplacez-vous avec les flèches ou A et D, sautez avec haut ou W, espace pour ramasser, lancer ou frapper."></div>
+  </main>
   <div id="disclaimer">Fiction · satire · aucune affiliation avec une personne ou une force de police réelle.</div>
 
   <!-- dependency-free: no CDN, no fonts. order matters. -->
